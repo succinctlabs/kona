@@ -1,3 +1,5 @@
+//! Contains the traits that define the high-level interfaces to the preimage oracle and hint writer.
+
 use crate::PreimageKey;
 use alloc::vec::Vec;
 use anyhow::Result;
@@ -10,14 +12,14 @@ pub trait PreimageOracleClient {
     /// # Returns
     /// - `Ok(Vec<u8>)` if the data was successfully fetched from the host.
     /// - `Err(_)` if the data could not be fetched from the host.
-    fn get(&mut self, key: PreimageKey) -> Result<Vec<u8>>;
+    fn get(&self, key: PreimageKey) -> Result<Vec<u8>>;
 
     /// Get the data corresponding to the currently set key from the host. Writes the data into the provided buffer.
     ///
     /// # Returns
     /// - `Ok(())` if the data was successfully written into the buffer.
     /// - `Err(_)` if the data could not be written into the buffer.
-    fn get_exact(&mut self, key: PreimageKey, buf: &mut [u8]) -> Result<()>;
+    fn get_exact(&self, key: PreimageKey, buf: &mut [u8]) -> Result<()>;
 }
 
 /// A [HintWriterClient] is a high-level interface to the hint pipe. It provides a way to write hints to the host.

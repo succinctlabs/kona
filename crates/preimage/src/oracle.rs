@@ -1,3 +1,5 @@
+//! Contains the [OracleReader] struct, which is a high-level interface to the preimage oracle pipe.
+
 use crate::{traits::PreimageOracleClient, PipeHandle, PreimageKey};
 use alloc::vec::Vec;
 use anyhow::{bail, Result};
@@ -16,7 +18,7 @@ impl OracleReader {
 
     /// Set the preimage key for the global oracle reader. This will overwrite any existing key, and block until the
     /// host has prepared the preimage and responded with the length of the preimage.
-    fn write_key(&mut self, key: PreimageKey) -> Result<usize> {
+    fn write_key(&self, key: PreimageKey) -> Result<usize> {
         // Write the key to the host so that it can prepare the preimage.
         let key_bytes: [u8; 32] = key.into();
         self.pipe_handle.write(&key_bytes)?;
@@ -31,7 +33,7 @@ impl OracleReader {
 impl PreimageOracleClient for OracleReader {
     /// Get the data corresponding to the currently set key from the host. Return the data in a new heap allocated
     /// `Vec<u8>`
-    fn get(&mut self, key: PreimageKey) -> Result<Vec<u8>> {
+    fn get(&self, key: PreimageKey) -> Result<Vec<u8>> {
         let length = self.write_key(key)?;
         let mut data_buffer = alloc::vec![0; length];
 
@@ -42,7 +44,7 @@ impl PreimageOracleClient for OracleReader {
     }
 
     /// Get the data corresponding to the currently set key from the host. Write the data into the provided buffer
-    fn get_exact(&mut self, key: PreimageKey, buf: &mut [u8]) -> Result<()> {
+    fn get_exact(&self, key: PreimageKey, buf: &mut [u8]) -> Result<()> {
         // Write the key to the host and read the length of the preimage.
         let length = self.write_key(key)?;
 
@@ -110,7 +112,7 @@ mod test {
     async fn test_oracle_reader() {
         const MOCK_DATA: &[u8] = b"1234567890";
         let sys = client_and_host();
-        let (mut oracle_reader, host_handle) = (sys.oracle_reader, sys.host_handle);
+        let (oracle_reader, host_handle) = (sys.oracle_reader, sys.host_handle);
 
         let client = tokio::task::spawn(async move {
             oracle_reader
@@ -124,7 +126,8 @@ mod test {
             host_handle.write(&length_and_data).unwrap();
         });
 
-        let (r, _) = tokio::join!(client, host);
+        let (r, w) = tokio::join!(client, host);
         assert_eq!(r.unwrap(), MOCK_DATA);
+        w.unwrap();
     }
 }

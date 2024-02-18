@@ -6,7 +6,7 @@ default:
 
 # Test for the native target
 test *args='':
-  cargo nextest run --workspace --all $@
+  cargo nextest run --workspace --exclude kona-client $@
 
 # Lint the workspace for all available targets
 lint: lint-native lint-cannon lint-asterisc lint-docs

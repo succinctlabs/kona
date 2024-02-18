@@ -1,3 +1,5 @@
+//! Contains the [HintWriter] type, which is a high-level interface to the hint writer pipe.
+
 use crate::{traits::HintWriterClient, PipeHandle};
 use alloc::vec;
 use anyhow::Result;
@@ -33,5 +35,76 @@ impl HintWriterClient for HintWriter {
         self.pipe_handle.read_exact(&mut hint_ack)?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    extern crate std;
+
+    use super::*;
+    use kona_common::FileDescriptor;
+    use std::{fs::File, os::fd::AsRawFd};
+    use tempfile::tempfile;
+
+    /// Test struct containing the [HintWriter] and a [PipeHandle] for the host, plus the open [File]s. The [File]s
+    /// are stored in this struct so that they are not dropped until the end of the test.
+    ///
+    /// TODO: Swap host pipe handle to hint router once it exists.
+    #[derive(Debug)]
+    struct ClientAndHost {
+        hint_writer: HintWriter,
+        host_handle: PipeHandle,
+        _read_file: File,
+        _write_file: File,
+    }
+
+    /// Helper for creating a new [HintWriter] and [PipeHandle] for testing. The file channel is over two temporary
+    /// files.
+    ///
+    /// TODO: Swap host pipe handle to hint router once it exists.
+    fn client_and_host() -> ClientAndHost {
+        let (read_file, write_file) = (tempfile().unwrap(), tempfile().unwrap());
+        let (read_fd, write_fd) = (
+            FileDescriptor::Wildcard(read_file.as_raw_fd().try_into().unwrap()),
+            FileDescriptor::Wildcard(write_file.as_raw_fd().try_into().unwrap()),
+        );
+        let client_handle = PipeHandle::new(read_fd, write_fd);
+        let host_handle = PipeHandle::new(write_fd, read_fd);
+
+        let hint_writer = HintWriter::new(client_handle);
+
+        ClientAndHost {
+            hint_writer,
+            host_handle,
+            _read_file: read_file,
+            _write_file: write_file,
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn test_hint_writer() {
+        const MOCK_DATA: &str = "dummy-hint facade";
+        let sys = client_and_host();
+        let (hint_writer, host_handle) = (sys.hint_writer, sys.host_handle);
+
+        let client = tokio::task::spawn(async move {
+            hint_writer.write(MOCK_DATA).unwrap();
+        });
+        let host = tokio::task::spawn(async move {
+            let mut hint_bytes = vec![0u8; MOCK_DATA.len() + 4];
+            host_handle.read_exact(hint_bytes.as_mut_slice()).unwrap();
+
+            let len = u32::from_be_bytes(hint_bytes[..4].try_into().unwrap());
+            assert_eq!(len, MOCK_DATA.len() as u32);
+            assert_eq!(&hint_bytes[4..], MOCK_DATA.as_bytes());
+
+            let ack = [1u8; 1];
+            host_handle.write(&ack).unwrap();
+        });
+
+        let (r, w) = tokio::join!(client, host);
+        r.unwrap();
+        w.unwrap();
     }
 }

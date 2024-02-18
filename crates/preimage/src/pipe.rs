@@ -1,10 +1,10 @@
-//! This module contains a rudamentary pipe between two file descriptors, using [kona_common::io] for
-//! reading and writing from the file descriptors.
+//! Contains a rudamentary pipe between two file descriptors, using [kona_common::io] for reading and writing from
+//! the file descriptors.
 
 use anyhow::{bail, Result};
 use kona_common::{io, FileDescriptor, RegisterSize};
 
-/// [PipeHandle] is a handle for one end of a bidirectional pipe.
+/// A [PipeHandle] is a handle for one end of a bidirectional pipe.
 #[derive(Debug, Clone, Copy)]
 pub struct PipeHandle {
     /// File descriptor to read from

@@ -9,6 +9,7 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+      - uses: taiki-e/install-action@just
       - name: Install Rust stable toolchain
         uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -16,7 +17,7 @@ jobs:
           cache-on-failure: true
       - uses: taiki-e/install-action@nextest
       - name: cargo test
-        run: cargo nextest run --release --workspace --all --locked
+        run: just test --locked
   cargo-lint:
     runs-on: ubuntu-latest
     timeout-minutes: 20

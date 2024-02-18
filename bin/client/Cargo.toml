@@ -1,0 +1,20 @@
+[package]
+name = "kona-client"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+exclude.workspace = true
+
+[dependencies]
+# Workspace
+anyhow.workspace = true
+
+# Local
+kona-common = { path = "../../crates/common" }
+kona-preimage = { path = "../../crates/preimage" }
+
+# External
+alloy-primitives = { version = "0.6.3", default-features = false }

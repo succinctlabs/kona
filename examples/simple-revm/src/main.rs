@@ -36,13 +36,13 @@ static CLIENT_HINT_PIPE: PipeHandle =
 pub extern "C" fn _start() {
     kona_common::alloc_heap!(HEAP_SIZE);
 
-    let mut oracle = OracleReader::new(CLIENT_PREIMAGE_PIPE);
+    let oracle = OracleReader::new(CLIENT_PREIMAGE_PIPE);
     let hint_writer = HintWriter::new(CLIENT_HINT_PIPE);
 
     io::print("Booting EVM and checking hash...\n");
-    let (digest, code) = boot(&mut oracle).expect("Failed to boot");
+    let (digest, code) = boot(&oracle).expect("Failed to boot");
 
-    match run_evm(&mut oracle, &hint_writer, digest, code) {
+    match run_evm(&oracle, &hint_writer, digest, code) {
         Ok(_) => io::print("Success, hashes matched!\n"),
         Err(e) => {
             let _ = io::print_err(alloc::format!("Error: {}\n", e).as_ref());
@@ -55,7 +55,7 @@ pub extern "C" fn _start() {
 
 /// Boot the program and load bootstrap information.
 #[inline]
-fn boot(oracle: &mut OracleReader) -> Result<([u8; 32], Vec<u8>)> {
+fn boot(oracle: &OracleReader) -> Result<([u8; 32], Vec<u8>)> {
     let digest = oracle
         .get(PreimageKey::new_local(DIGEST_IDENT))?
         .try_into()
@@ -68,7 +68,7 @@ fn boot(oracle: &mut OracleReader) -> Result<([u8; 32], Vec<u8>)> {
 /// Call the SHA-256 precompile and assert that the input and output match the expected values
 #[inline]
 fn run_evm(
-    oracle: &mut OracleReader,
+    oracle: &OracleReader,
     hint_writer: &HintWriter,
     digest: [u8; 32],
     code: Vec<u8>,
