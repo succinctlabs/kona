@@ -2,9 +2,12 @@
 
 extern crate std;
 
-use alloc::{collections::BTreeMap, vec::Vec};
+use alloc::{
+    collections::BTreeMap,
+    vec::{self, Vec},
+};
 use alloy_consensus::{Receipt, ReceiptEnvelope, ReceiptWithBloom, TxEnvelope, TxType};
-use alloy_primitives::{keccak256, Bytes, Log, B256};
+use alloy_primitives::{b256, keccak256, Bytes, Log, B256};
 use alloy_provider::{network::eip2718::Encodable2718, Provider, ProviderBuilder};
 use alloy_rlp::{BufMut, Encodable};
 use alloy_rpc_types::BlockTransactions;
@@ -164,4 +167,30 @@ pub(crate) const fn adjust_index_for_rlp(i: usize, len: usize) -> usize {
     } else {
         i + 1
     }
+}
+
+#[test]
+fn test_trie() {
+    use alloc::vec;
+
+    let mut hb = HashBuilder::default()
+        .with_proof_retainer(vec![Nibbles::unpack(&[0x00]), Nibbles::unpack(&[0x01])]);
+
+    // hb.add_leaf(Nibbles::unpack(&[0x00, 0xEE]), b"test one");
+    // hb.add_leaf(Nibbles::unpack(&[0x00, 0xFF]), b"test one");
+    // hb.add_leaf(Nibbles::unpack(&[0x01, 0xDD]), b"test one");
+    // hb.add_leaf(Nibbles::unpack(&[0x01, 0xEE]), b"test one");
+    // hb.add_leaf(Nibbles::unpack(&[0x01, 0xFF]), b"test one");
+    hb.add_branch(
+        Nibbles::unpack(&[0x00]),
+        b256!("f4ae7801fd7296c9cb9f2387149e93079bd7c74158fea76d978947fddbead8b7"),
+        true,
+    );
+    hb.add_branch(
+        Nibbles::unpack(&[0x01]),
+        b256!("91c0bc2b7771df00372f3b3ec799e2586115046fabc2b406c94b4d793ff1669c"),
+        true,
+    );
+    std::dbg!(hb.root());
+    std::dbg!(hb.take_proofs());
 }

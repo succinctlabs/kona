@@ -12,5 +12,8 @@ pub use node::{NodeElement, TrieNode};
 mod list_walker;
 pub use list_walker::OrderedListWalker;
 
+mod db;
+pub use db::TrieCacheDB;
+
 #[cfg(test)]
 mod test_util;
