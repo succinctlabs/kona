@@ -55,6 +55,10 @@ impl TrieNode {
         match path[0] >> 4 {
             PREFIX_EXTENSION_EVEN | PREFIX_EXTENSION_ODD => {
                 // extension node
+                {
+                    extern crate std;
+                    std::dbg!("FOUND EXTENSION NODE", &path, &value);
+                }
                 Ok(TrieNode::Extension { prefix: path, node: value })
             }
             PREFIX_LEAF_EVEN | PREFIX_LEAF_ODD => {
