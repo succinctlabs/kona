@@ -13,7 +13,10 @@ mod list_walker;
 pub use list_walker::OrderedListWalker;
 
 mod db;
-pub use db::TrieCacheDB;
+pub use db::{TrieAccount, TrieCacheDB};
+
+mod retrieval;
+pub use retrieval::retrieve;
 
 #[cfg(test)]
 mod test_util;

@@ -1,8 +1,9 @@
-//! This module contains an implementation of an in-memory Trie DB, that allows for incremental updates through fetching
-//! node preimages on the fly.
+//! This module contains an implementation of an in-memory Trie DB for [revm], that allows for
+//! incremental updates through fetching node preimages on the fly during execution.
 
 #![allow(dead_code, unused)]
 
+use crate::{NodeElement, TrieNode};
 use alloc::collections::VecDeque;
 use alloy_primitives::{keccak256, Address, Bytes, B256, U256};
 use alloy_rlp::Decodable;
@@ -12,21 +13,25 @@ use core::marker::PhantomData;
 use revm::{db::DbAccount, Database, DatabaseCommit, DatabaseRef, InMemoryDB};
 use revm_primitives::{hash_map::Entry, Account, AccountInfo, Bytecode, HashMap};
 
-use crate::{NodeElement, TrieNode};
+mod account;
+pub use account::TrieAccount;
 
-/// A Trie DB that caches account state in-memory. When accounts that don't already exist within the cache are queried,
-/// the database fetches the preimages of the trie nodes on the path to the account using the `PreimageFetcher`
-/// (`PF` generic) and `CodeHashFetcher` (`CHF` generic). This allows for data to be fetched in a verifiable manner
-/// given an initial trusted state root as it is needed during execution.
+/// A Trie DB that caches account state in-memory. When accounts that don't already exist within the
+/// cache are queried, the database fetches the preimages of the trie nodes on the path to the
+/// account using the `PreimageFetcher` (`PF` generic) and `CodeHashFetcher` (`CHF` generic). This
+/// allows for data to be fetched in a verifiable manner given an initial trusted state root as it
+/// is needed during execution.
 ///
 /// **Behavior**:
-/// - When an account is queried and it does not already exist in the inner cache database, we fall through to the
-///   `PreimageFetcher` to fetch the preimages of the trie nodes on the path to the account. After it has been fetched,
-///   the account is inserted into the cache database and will be read from there on subsequent queries.
-/// - When querying for the code hash of an account, the `CodeHashFetcher` is consulted to fetch the code hash of the
-///   account.
-/// - When a changeset is committed to the database, the changes are first applied to the cache database and then the
-///   trie is recomputed. The root hash of the trie is then persisted as
+/// - When an account is queried and it does not already exist in the inner cache database, we fall
+///   through to the `PreimageFetcher` to fetch the preimages of the trie nodes on the path to the
+///   account. After it has been fetched, the account is inserted into the cache database and will
+///   be read from there on subsequent queries.
+/// - When querying for the code hash of an account, the `CodeHashFetcher` is consulted to fetch the
+///   code hash of the account.
+/// - When a changeset is committed to the database, the changes are first applied to the cache
+///   database and then the trie hash is recomputed. The root hash of the trie is then persisted to
+///   the struct.
 #[derive(Debug, Default, Clone)]
 pub struct TrieCacheDB<PF, CHF> {
     /// The underlying DB that stores the account state in-memory.
@@ -87,78 +92,6 @@ where
         let root_node = TrieNode::decode(&mut fetcher(key)?.as_ref());
 
         todo!()
-    }
-
-    /// Walks down the trie to a leaf value with the given key, if it exists. Preimages for blinded nodes along the
-    /// path are fetched using the `fetcher` function.
-    ///
-    /// TODO: Fix nibble relations
-    fn get_trie(
-        &self,
-        item_key: &Bytes,
-        trie_node: TrieNode,
-        mut pos: usize,
-        fetcher: PF,
-    ) -> Result<(Bytes, Bytes)> {
-        match trie_node {
-            TrieNode::Branch { stack } => {
-                let next = item_key[pos];
-                extern crate std;
-                std::dbg!(next);
-
-                // for (i, node) in stack.into_iter().enumerate() {
-                //     match node {
-                //         NodeElement::String(s) => {
-                //             // If the string is a hash, we need to grab the preimage for it and
-                //             // continue recursing.
-                //             let hash: B256 = s.as_ref().try_into().map_err(|e| anyhow!("Conversion error: {e}"))?;
-                //             let trie_node = TrieNode::decode(&mut fetcher(hash)?.as_ref()).map_err(|e| anyhow!(e))?;
-                //
-                //             // If the value was found in the blinded node, return it.
-                //             if let Ok((key, value)) = self.get_trie(item_key, trie_node, pos, fetcher) {
-                //                 return Ok((key, value));
-                //             }
-                //         }
-                //         list @ NodeElement::List(_) => {
-                //             let trie_node = list.try_list_into_node()?;
-                //
-                //             // If the value was found in the blinded node, return it.
-                //             if let Ok((key, value)) = self.get_trie(item_key, trie_node, pos, fetcher) {
-                //                 return Ok((key, value));
-                //             }
-                //         }
-                //         _ => { /* Skip over empty lists and strings; We're looking for leaves */ }
-                //     };
-                // }
-
-                anyhow::bail!("Key does not exist in trie");
-            }
-            TrieNode::Leaf { key, value } => {
-                let shared_nibbles = key[1..].as_ref();
-                let item_key_nibbles = item_key[pos..pos + shared_nibbles.len()].as_ref();
-                if item_key_nibbles == shared_nibbles {
-                    Ok((key, value))
-                } else {
-                    anyhow::bail!("Key does not exist in trie");
-                }
-            }
-            TrieNode::Extension { prefix, node } => {
-                let shared_nibbles = prefix[1..].as_ref();
-                let item_key_nibbles = item_key[pos..pos + shared_nibbles.len()].as_ref();
-                if item_key_nibbles == shared_nibbles {
-                    // Increase the offset within the key by the length of the shared nibbles
-                    pos += shared_nibbles.len();
-
-                    // Follow extension branch
-                    let hash = B256::from_slice(node.as_ref());
-                    let extension_link =
-                        TrieNode::decode(&mut fetcher(hash)?.as_ref()).map_err(|e| anyhow!(e))?;
-                    self.get_trie(item_key, extension_link, pos, fetcher)
-                } else {
-                    anyhow::bail!("Key does not exist in trie");
-                }
-            }
-        }
     }
 }
 
