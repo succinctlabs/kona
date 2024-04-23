@@ -30,3 +30,4 @@ alloy-consensus = { git = "https://github.com/alloy-rs/alloy", version = "0.1.0"
 alloy-transport-http = { git = "https://github.com/alloy-rs/alloy", version = "0.1.0" }
 reqwest = "0.12"
 tracing-subscriber = "0.3.18"
+futures = { version = "0.3.30", default-features = false }

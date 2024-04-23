@@ -100,10 +100,13 @@ pub fn retrieve(
 #[cfg(test)]
 mod test {
     use alloc::{collections::BTreeMap, vec::Vec};
-    use alloy_primitives::{keccak256, Bytes, B256};
+    use alloy_primitives::{b256, keccak256, Bytes, B256};
+    use alloy_provider::{Provider, ProviderBuilder};
     use alloy_rlp::{Decodable, Encodable, EMPTY_STRING_CODE};
     use alloy_trie::Nibbles;
     use anyhow::{anyhow, Result};
+    use reqwest::Url;
+    use tokio::runtime::Runtime;
 
     use crate::{retrieve, test_util::ordered_trie_with_encoder, TrieNode};
 
@@ -134,5 +137,36 @@ mod test {
 
             assert_eq!(v, encoded_value);
         }
+    }
+
+    fn test_online_retrieval() {
+        extern crate std;
+        use std::dbg;
+
+        const RPC_URL: &str = "https://mainnet-replica-0-op-geth.primary.client.dev.oplabs.cloud";
+
+        // Initialize the provider.
+        let provider = ProviderBuilder::new()
+            .on_http(Url::parse(RPC_URL).expect("invalid rpc url"))
+            .map_err(|e| anyhow!(e))
+            .unwrap();
+
+        let block_number = 19005266;
+        let block = futures::executor::block_on(async { provider.get_block(block_number.into(), true) }).await.unwrap().unwrap();
+
+        let root = block.header.state_root;
+        let fetch = |hash: B256| -> Result<Bytes> {
+            let preimage = futures::executor::block_on(async {
+                provider
+                    .client()
+                    .request::<&[B256; 1], Bytes>("debug_dbGet", &[hash])
+                    .await
+                    .unwrap()
+            });
+            Ok(preimage)
+        };
+
+        dbg!(fetch(b256!("7cb368272bf53782d801c81c5a326202d21a5a5c6cbf292c7223838301acfbf3"))
+            .unwrap());
     }
 }
