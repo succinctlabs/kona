@@ -3,8 +3,9 @@
 
 #![allow(dead_code, unused)]
 
-use crate::{NodeElement, TrieNode};
+use crate::{retrieve, NodeElement, OrderedListWalker, TrieNode};
 use alloc::collections::VecDeque;
+use alloy_consensus::EMPTY_ROOT_HASH;
 use alloy_primitives::{keccak256, Address, Bytes, B256, U256};
 use alloy_rlp::Decodable;
 use alloy_trie::Nibbles;
@@ -32,25 +33,27 @@ pub use account::TrieAccount;
 /// - When a changeset is committed to the database, the changes are first applied to the cache
 ///   database and then the trie hash is recomputed. The root hash of the trie is then persisted to
 ///   the struct.
-#[derive(Debug, Default, Clone)]
-pub struct TrieCacheDB<PF, CHF> {
+#[derive(Debug, Clone)]
+pub struct TrieCacheDB<PF> {
     /// The underlying DB that stores the account state in-memory.
     db: InMemoryDB,
     /// The current root node of the trie.
     root: B256,
 
     _phantom_pf: PhantomData<PF>,
-    _phantom_chf: PhantomData<CHF>,
 }
 
-impl<PF, CHF> TrieCacheDB<PF, CHF>
+impl<PF> TrieCacheDB<PF>
 where
-    PF: Fn(B256) -> Result<Bytes> + Copy + Default,
-    CHF: Fn(Address) -> Result<Bytes> + Copy + Default,
+    PF: Fn(B256) -> Result<Bytes> + Copy,
 {
     /// Creates a new [TrieCacheDB] with the given root node.
     pub fn new(root: B256) -> Self {
-        Self { root, ..Default::default() }
+        Self {
+            root,
+            db: InMemoryDB::default(),
+            _phantom_pf: PhantomData,
+        }
     }
 
     /// Returns the current state root of the trie DB.
@@ -87,28 +90,50 @@ where
         }
     }
 
-    fn get_account_trie(&self, address: Address, fetcher: PF) -> Result<Account> {
-        let key = keccak256(address.as_slice());
-        let root_node = TrieNode::decode(&mut fetcher(key)?.as_ref());
+    /// Loads an account from the trie by consulting the `PreimageFetcher` to fetch the preimages of the trie nodes on 
+    /// the path to the account. Once the account is reached, the storage trie is walked to hydrate the account's 
+    /// storage map.
+    pub fn load_account_from_trie(&self, address: Address, fetcher: PF) -> Result<DbAccount> {
+        let root_node = TrieNode::decode(&mut fetcher(self.root)?.as_ref()).map_err(|e| anyhow!(e))?;
 
-        todo!()
+        let hashed_address_nibbles = Nibbles::unpack(keccak256(address.as_slice()));
+        let trie_account_rlp = retrieve(&hashed_address_nibbles, root_node, 0, fetcher)?;
+        let trie_account =
+            TrieAccount::decode(&mut trie_account_rlp.as_ref()).map_err(|e| anyhow!(e))?;
+
+        let storage = if trie_account.storage_root != EMPTY_ROOT_HASH {
+            let storage_walker = OrderedListWalker::try_new_hydrated(trie_account.storage_root, fetcher)?;
+            
+            todo!()
+        } else {
+            Default::default()
+        };
+
+        Ok(DbAccount {
+            info: AccountInfo {
+                balance: trie_account.balance,
+                nonce: trie_account.nonce,
+                code_hash: trie_account.code_hash,
+                code: todo!(),
+            },
+            account_state: Default::default(),
+            storage: todo!(),
+        })
     }
 }
 
-impl<PF, CHF> DatabaseCommit for TrieCacheDB<PF, CHF>
+impl<PF> DatabaseCommit for TrieCacheDB<PF>
 where
     PF: Fn(B256) -> Result<Bytes> + Copy,
-    CHF: Fn(Address) -> Result<Bytes> + Copy,
 {
     fn commit(&mut self, changes: HashMap<Address, Account>) {
         todo!()
     }
 }
 
-impl<PF, CHF> Database for TrieCacheDB<PF, CHF>
+impl<PF> Database for TrieCacheDB<PF>
 where
     PF: Fn(B256) -> Result<Bytes> + Copy,
-    CHF: Fn(Address) -> Result<Bytes> + Copy,
 {
     type Error = anyhow::Error;
 
@@ -129,10 +154,9 @@ where
     }
 }
 
-impl<PF, CHF> DatabaseRef for TrieCacheDB<PF, CHF>
+impl<PF> DatabaseRef for TrieCacheDB<PF>
 where
     PF: Fn(B256) -> Result<Bytes> + Copy,
-    CHF: Fn(Address) -> Result<Bytes> + Copy,
 {
     type Error = anyhow::Error;
 

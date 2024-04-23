@@ -61,14 +61,15 @@ pub fn retrieve(
             anyhow::bail!("Key does not exist in trie");
         }
         TrieNode::Leaf { key, value } => {
+            let key_nibbles = Nibbles::unpack(key.clone());
+            let shared_nibbles = key_nibbles[1..].as_ref();
+
             // If the key length is one, it only contains the prefix and no shared nibbles. Return
             // the key and value.
-            if key.len() == 1 {
+            if key.len() == 1 || pos + shared_nibbles.len() >= item_key.len() {
                 return Ok(value);
             }
 
-            let key_nibbles = Nibbles::unpack(key.clone());
-            let shared_nibbles = key_nibbles[1..].as_ref();
             let item_key_nibbles = item_key[pos..pos + shared_nibbles.len()].as_ref();
 
             if item_key_nibbles == shared_nibbles {
@@ -99,16 +100,14 @@ pub fn retrieve(
 
 #[cfg(test)]
 mod test {
+    use crate::{retrieve, test_util::ordered_trie_with_encoder, TrieCacheDB, TrieNode};
     use alloc::{collections::BTreeMap, vec::Vec};
-    use alloy_primitives::{b256, keccak256, Bytes, B256};
+    use alloy_primitives::{address, keccak256, Bytes, B256};
     use alloy_provider::{Provider, ProviderBuilder};
     use alloy_rlp::{Decodable, Encodable, EMPTY_STRING_CODE};
     use alloy_trie::Nibbles;
     use anyhow::{anyhow, Result};
     use reqwest::Url;
-    use tokio::runtime::Runtime;
-
-    use crate::{retrieve, test_util::ordered_trie_with_encoder, TrieNode};
 
     #[test]
     fn test_retrieve_from_trie_simple() {
@@ -139,6 +138,7 @@ mod test {
         }
     }
 
+    #[test]
     fn test_online_retrieval() {
         extern crate std;
         use std::dbg;
@@ -151,22 +151,32 @@ mod test {
             .map_err(|e| anyhow!(e))
             .unwrap();
 
-        let block_number = 19005266;
-        let block = futures::executor::block_on(async { provider.get_block(block_number.into(), true) }).await.unwrap().unwrap();
+        let block_number = 119113659;
+        let block = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async { provider.get_block(block_number.into(), true).await })
+            .unwrap()
+            .unwrap();
 
         let root = block.header.state_root;
         let fetch = |hash: B256| -> Result<Bytes> {
-            let preimage = futures::executor::block_on(async {
-                provider
-                    .client()
-                    .request::<&[B256; 1], Bytes>("debug_dbGet", &[hash])
-                    .await
-                    .unwrap()
-            });
+            let preimage =
+                tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap().block_on(
+                    async {
+                        provider
+                            .client()
+                            .request::<&[B256; 1], Bytes>("debug_dbGet", &[hash])
+                            .await
+                            .unwrap()
+                    },
+                );
             Ok(preimage)
         };
 
-        dbg!(fetch(b256!("7cb368272bf53782d801c81c5a326202d21a5a5c6cbf292c7223838301acfbf3"))
-            .unwrap());
+        let trie_db = TrieCacheDB::new(root);
+        let address = address!("58476065a5313bea04C059FFe51e8935A51a35AC");
+        trie_db.load_account_from_trie(address, fetch).unwrap();
     }
 }

@@ -9,13 +9,13 @@ use revm_primitives::{Account, AccountInfo};
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default, RlpEncodable, RlpDecodable)]
 pub struct TrieAccount {
     /// Account nonce.
-    nonce: u64,
+    pub nonce: u64,
     /// Account balance.
-    balance: U256,
+    pub balance: U256,
     /// Account's storage root.
-    storage_root: B256,
+    pub storage_root: B256,
     /// Hash of the account's bytecode.
-    code_hash: B256,
+    pub code_hash: B256,
 }
 
 impl From<(Account, B256)> for TrieAccount {
@@ -37,12 +37,5 @@ impl From<(AccountInfo, B256)> for TrieAccount {
             storage_root,
             code_hash: account.code_hash,
         }
-    }
-}
-
-impl TrieAccount {
-    /// Get account's storage root.
-    pub fn storage_root(&self) -> B256 {
-        self.storage_root
     }
 }

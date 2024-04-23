@@ -19,7 +19,7 @@ pub struct OrderedListWalker<PreimageFetcher> {
     root: B256,
     /// The leaf nodes of the derived list, in order. [None] if the tree has yet to be fully
     /// traversed with [Self::hydrate].
-    inner: Option<VecDeque<Bytes>>,
+    inner: Option<VecDeque<(B256, Bytes)>>,
     /// Phantom data
     _phantom: PhantomData<PreimageFetcher>,
 }
@@ -75,7 +75,10 @@ where
     }
 
     /// Traverses a [TrieNode], returning all values of child [TrieNode::Leaf] variants.
-    fn fetch_leaves(trie_node: TrieNode, fetcher: PreimageFetcher) -> Result<VecDeque<Bytes>> {
+    fn fetch_leaves(
+        trie_node: TrieNode,
+        fetcher: PreimageFetcher,
+    ) -> Result<VecDeque<(B256, Bytes)>> {
         match trie_node {
             TrieNode::Branch { stack } => {
                 let mut leaf_values = VecDeque::with_capacity(stack.len());
@@ -96,7 +99,11 @@ where
                 }
                 Ok(leaf_values)
             }
-            TrieNode::Leaf { value, .. } => Ok(vec![value].into()),
+            TrieNode::Leaf { key, value } => Ok(vec![(
+                key.as_ref().try_into().map_err(|_| anyhow!("Key is not a hash"))?,
+                value,
+            )]
+            .into()),
             TrieNode::Extension { node, .. } => {
                 // If the node is a hash, we need to grab the preimage for it and continue
                 // recursing.
@@ -120,7 +127,7 @@ where
 }
 
 impl<PreimageFetcher> Iterator for OrderedListWalker<PreimageFetcher> {
-    type Item = Bytes;
+    type Item = (B256, Bytes);
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.inner {
@@ -152,7 +159,7 @@ mod test {
 
         assert_eq!(
             list.into_iter()
-                .map(|rlp| ReceiptEnvelope::decode_2718(&mut rlp.as_ref()).unwrap())
+                .map(|(_, rlp)| ReceiptEnvelope::decode_2718(&mut rlp.as_ref()).unwrap())
                 .collect::<Vec<_>>(),
             envelopes
         );
@@ -167,7 +174,7 @@ mod test {
 
         assert_eq!(
             list.into_iter()
-                .map(|rlp| TxEnvelope::decode(&mut rlp.as_ref()).unwrap())
+                .map(|(_, rlp)| TxEnvelope::decode(&mut rlp.as_ref()).unwrap())
                 .collect::<Vec<_>>(),
             envelopes
         );
@@ -194,7 +201,7 @@ mod test {
             list.inner
                 .unwrap()
                 .iter()
-                .map(|v| String::decode(&mut v.as_ref()).unwrap())
+                .map(|(_, v)| String::decode(&mut v.as_ref()).unwrap())
                 .collect::<Vec<_>>(),
             VALUES
         );
