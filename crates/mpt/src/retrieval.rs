@@ -177,6 +177,6 @@ mod test {
 
         let trie_db = TrieCacheDB::new(root);
         let address = address!("58476065a5313bea04C059FFe51e8935A51a35AC");
-        trie_db.load_account_from_trie(address, fetch).unwrap();
+        dbg!(trie_db.load_account_from_trie(address, fetch).unwrap());
     }
 }
