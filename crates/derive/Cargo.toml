@@ -17,7 +17,7 @@ alloy-primitives = { workspace = true, features = ["rlp"] }
 alloy-rlp = { workspace = true, features = ["derive"] }
 
 # Local
-kona-primitives = { path = "../primitives", version = "0.0.1" }
+kona-primitives = { path = "../primitives", version = "0.0.2" }
 
 # External
 alloy-sol-types = { version = "0.7.1", default-features = false }
