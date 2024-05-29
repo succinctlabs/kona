@@ -7,7 +7,7 @@ use crate::{
 use alloy_consensus::Receipt;
 use alloy_primitives::{address, Address, Log, U256};
 use alloy_sol_types::{sol, SolType};
-use anyhow::{anyhow, bail, Result};
+use eyre::Result;
 
 /// Optimism system config contract values
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -41,7 +41,7 @@ pub enum SystemConfigUpdateType {
 }
 
 impl TryFrom<u64> for SystemConfigUpdateType {
-    type Error = anyhow::Error;
+    type Error = eyre::Error;
 
     fn try_from(value: u64) -> core::prelude::v1::Result<Self, Self::Error> {
         match value {
@@ -49,7 +49,7 @@ impl TryFrom<u64> for SystemConfigUpdateType {
             1 => Ok(SystemConfigUpdateType::GasConfig),
             2 => Ok(SystemConfigUpdateType::GasLimit),
             3 => Ok(SystemConfigUpdateType::UnsafeBlockSigner),
-            _ => bail!("Invalid SystemConfigUpdateType value: {}", value),
+            _ => eyre::bail!("Invalid SystemConfigUpdateType value: {}", value),
         }
     }
 }
@@ -73,7 +73,12 @@ impl SystemConfig {
                     !topics.is_empty() &&
                     topics[0] == CONFIG_UPDATE_TOPIC
                 {
-                    self.process_config_update_log(log, rollup_config, l1_time)?;
+                    match self.process_config_update_log(log, rollup_config, l1_time) {
+                        Ok(_) => {}
+                        Err(e) => {
+                            eyre::bail!("Failed to process config update log: {}", e);
+                        }
+                    }
                 }
                 Ok(())
             })?;
@@ -100,66 +105,66 @@ impl SystemConfig {
         l1_time: u64,
     ) -> Result<()> {
         if log.topics().len() < 3 {
-            bail!("Invalid config update log: not enough topics");
+            eyre::bail!("Invalid config update log: not enough topics");
         }
         if log.topics()[0] != CONFIG_UPDATE_TOPIC {
-            bail!("Invalid config update log: invalid topic");
+            eyre::bail!("Invalid config update log: invalid topic");
         }
 
         // Parse the config update log
         let version = log.topics()[1];
         if version != CONFIG_UPDATE_EVENT_VERSION_0 {
-            bail!("Invalid config update log: unsupported version");
+            eyre::bail!("Invalid config update log: unsupported version");
         }
         let update_type = u64::from_be_bytes(
             log.topics()[2].as_slice()[24..]
                 .try_into()
-                .map_err(|_| anyhow!("Failed to convert update type to u64"))?,
+                .map_err(|_| eyre::eyre!("Failed to convert update type to u64"))?,
         );
         let log_data = log.data.data.as_ref();
 
         match update_type.try_into()? {
             SystemConfigUpdateType::Batcher => {
                 if log_data.len() != 96 {
-                    bail!("Invalid config update log: invalid data length");
+                    eyre::bail!("Invalid config update log: invalid data length");
                 }
 
                 let pointer = <sol!(uint64)>::abi_decode(&log_data[0..32], true)
-                    .map_err(|_| anyhow!("Failed to decode batcher update log"))?;
+                    .map_err(|_| eyre::eyre!("Failed to decode batcher update log"))?;
                 if pointer != 32 {
-                    bail!("Invalid config update log: invalid data pointer");
+                    eyre::bail!("Invalid config update log: invalid data pointer");
                 }
                 let length = <sol!(uint64)>::abi_decode(&log_data[32..64], true)
-                    .map_err(|_| anyhow!("Failed to decode batcher update log"))?;
+                    .map_err(|_| eyre::eyre!("Failed to decode batcher update log"))?;
                 if length != 32 {
-                    bail!("Invalid config update log: invalid data length");
+                    eyre::bail!("Invalid config update log: invalid data length");
                 }
 
                 let batcher_address =
                     <sol!(address)>::abi_decode(&log.data.data.as_ref()[64..], true)
-                        .map_err(|_| anyhow!("Failed to decode batcher update log"))?;
+                        .map_err(|_| eyre::eyre!("Failed to decode batcher update log"))?;
                 self.batcher_addr = batcher_address;
             }
             SystemConfigUpdateType::GasConfig => {
                 if log_data.len() != 128 {
-                    bail!("Invalid config update log: invalid data length");
+                    eyre::bail!("Invalid config update log: invalid data length");
                 }
 
                 let pointer = <sol!(uint64)>::abi_decode(&log_data[0..32], true)
-                    .map_err(|_| anyhow!("Invalid config update log: invalid data pointer"))?;
+                    .map_err(|_| eyre::eyre!("Invalid config update log: invalid data pointer"))?;
                 if pointer != 32 {
-                    bail!("Invalid config update log: invalid data pointer");
+                    eyre::bail!("Invalid config update log: invalid data pointer");
                 }
                 let length = <sol!(uint64)>::abi_decode(&log_data[32..64], true)
-                    .map_err(|_| anyhow!("Invalid config update log: invalid data length"))?;
+                    .map_err(|_| eyre::eyre!("Invalid config update log: invalid data length"))?;
                 if length != 64 {
-                    bail!("Invalid config update log: invalid data length");
+                    eyre::bail!("Invalid config update log: invalid data length");
                 }
 
                 let overhead = <sol!(uint256)>::abi_decode(&log_data[64..96], true)
-                    .map_err(|_| anyhow!("Invalid config update log: invalid overhead"))?;
+                    .map_err(|_| eyre::eyre!("Invalid config update log: invalid overhead"))?;
                 let scalar = <sol!(uint256)>::abi_decode(&log_data[96..], true)
-                    .map_err(|_| anyhow!("Invalid config update log: invalid scalar"))?;
+                    .map_err(|_| eyre::eyre!("Invalid config update log: invalid scalar"))?;
 
                 if rollup_config.is_ecotone_active(l1_time) {
                     if RollupConfig::check_ecotone_l1_system_config_scalar(scalar.to_be_bytes())
@@ -180,22 +185,22 @@ impl SystemConfig {
             }
             SystemConfigUpdateType::GasLimit => {
                 if log_data.len() != 96 {
-                    bail!("Invalid config update log: invalid data length");
+                    eyre::bail!("Invalid config update log: invalid data length");
                 }
 
                 let pointer = <sol!(uint64)>::abi_decode(&log_data[0..32], true)
-                    .map_err(|_| anyhow!("Invalid config update log: invalid data pointer"))?;
+                    .map_err(|_| eyre::eyre!("Invalid config update log: invalid data pointer"))?;
                 if pointer != 32 {
-                    bail!("Invalid config update log: invalid data pointer");
+                    eyre::bail!("Invalid config update log: invalid data pointer");
                 }
                 let length = <sol!(uint64)>::abi_decode(&log_data[32..64], true)
-                    .map_err(|_| anyhow!("Invalid config update log: invalid data length"))?;
+                    .map_err(|_| eyre::eyre!("Invalid config update log: invalid data length"))?;
                 if length != 32 {
-                    bail!("Invalid config update log: invalid data length");
+                    eyre::bail!("Invalid config update log: invalid data length");
                 }
 
                 let gas_limit = <sol!(uint256)>::abi_decode(&log_data[64..], true)
-                    .map_err(|_| anyhow!("Invalid config update log: invalid gas limit"))?;
+                    .map_err(|_| eyre::eyre!("Invalid config update log: invalid gas limit"))?;
                 self.gas_limit = gas_limit;
             }
             SystemConfigUpdateType::UnsafeBlockSigner => {

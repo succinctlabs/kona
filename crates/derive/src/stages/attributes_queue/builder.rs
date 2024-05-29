@@ -88,7 +88,11 @@ where
                 ));
             }
             let receipts = self.receipts_fetcher.receipts_by_hash(epoch.hash).await?;
-            sys_config.update_with_receipts(&receipts, &self.rollup_cfg, header.timestamp)?;
+            if let Err(e) =
+                sys_config.update_with_receipts(&receipts, &self.rollup_cfg, header.timestamp)
+            {
+                return Err(BuilderError::Custom(anyhow::anyhow!(e)));
+            }
             let deposits =
                 derive_deposits(epoch.hash, receipts, self.rollup_cfg.deposit_contract_address)
                     .await?;
@@ -126,13 +130,16 @@ where
         }
 
         // Build and encode the L1 info transaction for the current payload.
-        let (_, l1_info_tx_envelope) = L1BlockInfoTx::try_new_with_deposit_tx(
+        let (_, l1_info_tx_envelope) = match L1BlockInfoTx::try_new_with_deposit_tx(
             &self.rollup_cfg,
             &sys_config,
             sequence_number,
             &l1_header,
             next_l2_time,
-        )?;
+        ) {
+            Ok(tx) => tx,
+            Err(e) => return Err(BuilderError::Custom(anyhow::anyhow!(e))),
+        };
         let mut encoded_l1_info_tx = Vec::with_capacity(l1_info_tx_envelope.length());
         l1_info_tx_envelope.encode(&mut encoded_l1_info_tx);
 

@@ -193,7 +193,9 @@ impl<T: Provider<Http<reqwest::Client>>> L2ChainProvider for AlloyL2ChainProvide
         }
 
         let payload = self.payload_by_number(number).await?;
-        let l2_block_info = payload.to_l2_block_ref(self.rollup_config.as_ref())?;
+        let Ok(l2_block_info) = payload.to_l2_block_ref(self.rollup_config.as_ref()) else {
+            anyhow::bail!("Failed to convert payload to L2 block info")
+        };
         self.l2_block_info_by_number_cache.put(number, l2_block_info);
         Ok(l2_block_info)
     }
@@ -226,6 +228,9 @@ impl<T: Provider<Http<reqwest::Client>>> L2ChainProvider for AlloyL2ChainProvide
         }
 
         let envelope = self.payload_by_number(number).await?;
-        envelope.to_system_config(&rollup_config)
+        match envelope.to_system_config(&rollup_config) {
+            Ok(system_config) => Ok(system_config),
+            Err(e) => anyhow::bail!("Failed to convert payload to system config: {:?}", e),
+        }
     }
 }

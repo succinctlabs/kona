@@ -9,7 +9,7 @@ repository.workspace = true
 homepage.workspace = true
 
 [dependencies]
-anyhow.workspace = true
+eyre = "0.6"
 alloy-consensus.workspace = true
 alloy-rlp = { workspace = true, features = ["derive"] }
 alloy-primitives = { workspace = true, features = ["rlp"] }

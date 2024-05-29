@@ -101,7 +101,7 @@ impl<F: ChainProvider + Send> OriginAdvancer for L1Traversal<F> {
             &self.rollup_config,
             next_l1_origin.timestamp,
         ) {
-            return Err(StageError::SystemConfigUpdate(e));
+            return Err(StageError::SystemConfigUpdate(anyhow::anyhow!(e)));
         }
 
         self.block = Some(next_l1_origin);

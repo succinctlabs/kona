@@ -54,8 +54,8 @@ pub enum DepositError {
     MintDecode(Bytes),
     /// Failed to decode the deposit gas value.
     GasDecode(Bytes),
-    /// A custom error wrapping [anyhow::Error].
-    Custom(anyhow::Error),
+    /// A custom error wrapping [eyre::Error].
+    Custom(eyre::Error),
 }
 
 impl PartialEq<DepositError> for DepositError {

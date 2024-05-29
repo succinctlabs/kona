@@ -4,7 +4,7 @@ use super::{BlockID, DepositSourceDomain, L1InfoDepositSource, RollupConfig, Sys
 use alloc::vec::Vec;
 use alloy_consensus::Header;
 use alloy_primitives::{address, Address, Bytes, TxKind, B256, U256};
-use anyhow::{anyhow, Result};
+use eyre::Result;
 use op_alloy_consensus::{OpTxEnvelope, TxDeposit};
 
 /// The system transaction gas limit post-Regolith
@@ -129,10 +129,10 @@ impl L1BlockInfoTx {
             let scalar = system_config.l1_fee_scalar.to_be_bytes::<32>();
             let blob_base_fee_scalar = (scalar[0] == L1_SCALAR_ECOTONE)
                 .then(|| {
-                    Ok(u32::from_be_bytes(
+                    Ok::<u32, eyre::Error>(u32::from_be_bytes(
                         scalar[24..28]
                             .try_into()
-                            .map_err(|_| anyhow!("Failed to parse L1 blob base fee scalar"))?,
+                            .map_err(|_| eyre::eyre!("Failed to parse L1 blob base fee scalar"))?,
                     ))
                 })
                 .transpose()?
@@ -140,7 +140,7 @@ impl L1BlockInfoTx {
             let base_fee_scalar = u32::from_be_bytes(
                 scalar[28..32]
                     .try_into()
-                    .map_err(|_| anyhow!("Failed to parse base fee scalar"))?,
+                    .map_err(|_| eyre::eyre!("Failed to parse base fee scalar"))?,
             );
             Ok(Self::Ecotone(L1BlockInfoEcotone {
                 number: l1_header.number,
@@ -219,7 +219,7 @@ impl L1BlockInfoTx {
             L1_INFO_TX_SELECTOR_ECOTONE => {
                 Ok(Self::Ecotone(L1BlockInfoEcotone::decode_calldata(r)?))
             }
-            _ => anyhow::bail!("Unreachable case; Invalid L1 info transaction selector."),
+            _ => eyre::bail!("Unreachable case; Invalid L1 info transaction selector."),
         }
     }
 
@@ -287,18 +287,19 @@ impl L1BlockInfoBedrock {
     /// Decodes the [L1BlockInfoBedrock] object from ethereum transaction calldata.
     pub fn decode_calldata(r: &[u8]) -> Result<Self> {
         if r.len() != L1_INFO_TX_LEN_BEDROCK {
-            anyhow::bail!("Invalid calldata length for Bedrock L1 info transaction");
+            eyre::bail!("Invalid calldata length for Bedrock L1 info transaction");
         }
 
         let number =
-            u64::from_be_bytes(r[28..36].try_into().map_err(|_| anyhow!("Conversion error"))?);
+            u64::from_be_bytes(r[28..36].try_into().map_err(|_| eyre::eyre!("Conversion error"))?);
         let time =
-            u64::from_be_bytes(r[60..68].try_into().map_err(|_| anyhow!("Conversion error"))?);
+            u64::from_be_bytes(r[60..68].try_into().map_err(|_| eyre::eyre!("Conversion error"))?);
         let base_fee =
-            u64::from_be_bytes(r[92..100].try_into().map_err(|_| anyhow!("Conversion error"))?);
+            u64::from_be_bytes(r[92..100].try_into().map_err(|_| eyre::eyre!("Conversion error"))?);
         let block_hash = B256::from_slice(r[100..132].as_ref());
-        let sequence_number =
-            u64::from_be_bytes(r[156..164].try_into().map_err(|_| anyhow!("Conversion error"))?);
+        let sequence_number = u64::from_be_bytes(
+            r[156..164].try_into().map_err(|_| eyre::eyre!("Conversion error"))?,
+        );
         let batcher_address = Address::from_slice(r[176..196].as_ref());
         let l1_fee_overhead = U256::from_be_slice(r[196..228].as_ref());
         let l1_fee_scalar = U256::from_be_slice(r[228..260].as_ref());
@@ -336,23 +337,24 @@ impl L1BlockInfoEcotone {
     /// Decodes the [L1BlockInfoEcotone] object from ethereum transaction calldata.
     pub fn decode_calldata(r: &[u8]) -> Result<Self> {
         if r.len() != L1_INFO_TX_LEN_ECOTONE {
-            anyhow::bail!("Invalid calldata length for Ecotone L1 info transaction");
+            eyre::bail!("Invalid calldata length for Ecotone L1 info transaction");
         }
 
         let base_fee_scalar =
-            u32::from_be_bytes(r[4..8].try_into().map_err(|_| anyhow!("Conversion error"))?);
+            u32::from_be_bytes(r[4..8].try_into().map_err(|_| eyre::eyre!("Conversion error"))?);
         let blob_base_fee_scalar =
-            u32::from_be_bytes(r[8..12].try_into().map_err(|_| anyhow!("Conversion error"))?);
+            u32::from_be_bytes(r[8..12].try_into().map_err(|_| eyre::eyre!("Conversion error"))?);
         let sequence_number =
-            u64::from_be_bytes(r[12..20].try_into().map_err(|_| anyhow!("Conversion error"))?);
+            u64::from_be_bytes(r[12..20].try_into().map_err(|_| eyre::eyre!("Conversion error"))?);
         let timestamp =
-            u64::from_be_bytes(r[20..28].try_into().map_err(|_| anyhow!("Conversion error"))?);
+            u64::from_be_bytes(r[20..28].try_into().map_err(|_| eyre::eyre!("Conversion error"))?);
         let l1_block_number =
-            u64::from_be_bytes(r[28..36].try_into().map_err(|_| anyhow!("Conversion error"))?);
+            u64::from_be_bytes(r[28..36].try_into().map_err(|_| eyre::eyre!("Conversion error"))?);
         let base_fee =
-            u64::from_be_bytes(r[60..68].try_into().map_err(|_| anyhow!("Conversion error"))?);
-        let blob_base_fee =
-            u128::from_be_bytes(r[84..100].try_into().map_err(|_| anyhow!("Conversion error"))?);
+            u64::from_be_bytes(r[60..68].try_into().map_err(|_| eyre::eyre!("Conversion error"))?);
+        let blob_base_fee = u128::from_be_bytes(
+            r[84..100].try_into().map_err(|_| eyre::eyre!("Conversion error"))?,
+        );
         let block_hash = B256::from_slice(r[100..132].as_ref());
         let batcher_address = Address::from_slice(r[144..164].as_ref());
 
@@ -512,7 +514,7 @@ mod test {
                 u32::from_be_bytes(
                     scalar[24..28]
                         .try_into()
-                        .map_err(|_| anyhow!("Failed to parse L1 blob base fee scalar"))
+                        .map_err(|_| eyre::eyre!("Failed to parse L1 blob base fee scalar"))
                         .unwrap(),
                 )
             })
@@ -520,7 +522,7 @@ mod test {
         let base_fee_scalar = u32::from_be_bytes(
             scalar[28..32]
                 .try_into()
-                .map_err(|_| anyhow!("Failed to parse base fee scalar"))
+                .map_err(|_| eyre::eyre!("Failed to parse base fee scalar"))
                 .unwrap(),
         );
         assert_eq!(l1_info.blob_base_fee_scalar, blob_base_fee_scalar);
