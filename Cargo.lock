@@ -1627,6 +1627,7 @@ dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "alloy-provider",
+ "alloy-rlp",
  "alloy-rpc-client",
  "alloy-rpc-types",
  "alloy-transport-http",
