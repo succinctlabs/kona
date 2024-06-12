@@ -38,13 +38,13 @@ async fn main() -> Result<()> {
         }
 
         if let Some(attributes) = pipeline.pop() {
-            if !validator.validate(&attributes).await {
-                error!(target: "loop", "Failed payload validation: {}", attributes.parent.block_info.hash);
-            } else {
-                info!(target: "loop", "Validated payload attributes");
-            }
             dbg!(attributes);
-            break
+            break;
+            // if !validator.validate(&attributes).await {
+            //     error!(target: "loop", "Failed payload validation: {}", attributes.parent.block_info.hash);
+            // } else {
+            //     info!(target: "loop", "Validated payload attributes");
+            // }
         } else {
             debug!(target: "loop", "No attributes to validate");
         }
