@@ -66,13 +66,12 @@ impl<CP: ChainProvider + Send> CalldataSource<CP> {
                     TxEnvelope::Eip1559(tx) => (tx.tx().to(), tx.tx().input()),
                     _ => return None,
                 };
-                let TxKind::Call(to) = tx_kind else { return None };
+                let TxKind::Call(_) = tx_kind else { return None };
 
-                tracing::debug!("tx with calldata to: {}, batch inbox: {}", to, self.batch_inbox_address);
-                if to != self.batch_inbox_address {
-                    return None;
-                }
-                tracing::debug!("tx sent to batcher inbox");
+                // TODO: Re-enable once we pass in the proper batcher address.
+                // if to != self.batch_inbox_address {
+                //     return None;
+                // }
                 if tx.recover_public_key().ok()? != self.signer {
                     return None;
                 }
