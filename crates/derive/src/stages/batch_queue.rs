@@ -306,8 +306,8 @@ where
         // Advance the origin if needed.
         // The entire pipeline has the same origin.
         // Batches prior to the l1 origin of the l2 safe head are not accepted.
-        if self.origin != self.prev.origin().copied() {
-            self.origin = self.prev.origin().cloned();
+        if self.origin != self.prev.origin() {
+            self.origin = self.prev.origin();
             if !origin_behind {
                 let origin = self.origin.as_ref().ok_or_else(|| anyhow!("missing origin"))?;
                 self.l1_blocks.push(*origin);
@@ -388,7 +388,7 @@ where
     P: BatchQueueProvider + PreviousStage + Debug,
     BF: L2ChainProvider + Debug,
 {
-    fn origin(&self) -> Option<&BlockInfo> {
+    fn origin(&self) -> Option<BlockInfo> {
         self.prev.origin()
     }
 }
@@ -436,8 +436,8 @@ mod tests {
         },
         traits::test_utils::TestL2ChainProvider,
         types::{
-            BatchType, BlockID, Genesis, L1BlockInfoBedrock, L1BlockInfoTx, L2ExecutionPayload,
-            L2ExecutionPayloadEnvelope,
+            BatchType, BlockID, ChainGenesis, L1BlockInfoBedrock, L1BlockInfoTx,
+            L2ExecutionPayload, L2ExecutionPayloadEnvelope,
         },
     };
     use alloc::vec;
@@ -518,7 +518,7 @@ mod tests {
             block_time: 100,
             max_sequencer_drift: 10000000,
             seq_window_size: 10000000,
-            genesis: Genesis {
+            genesis: ChainGenesis {
                 l2: BlockID { number: 8, hash: payload_block_hash },
                 l1: BlockID { number: 16988980031808077784, ..Default::default() },
                 ..Default::default()
