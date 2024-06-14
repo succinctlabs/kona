@@ -17,7 +17,7 @@ jobs:
       run: cd bin/zkvm-host
 
     - name: Build zkvm_host
-      run: bash build.sh
+      run: bash ./build.sh
 
     - name: Run zkvm_host
       run: cargo run --release
