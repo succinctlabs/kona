@@ -1,8 +1,8 @@
 use alloy_consensus::Header;
-use alloy_primitives::{keccak256, Address, Bytes, B256, U256};
+use alloy_primitives::{keccak256, Bytes, B256};
 use alloy_rlp::Decodable;
 use anyhow::{anyhow, Result};
-use kona_mpt::{TrieDBFetcher, TrieDBHinter};
+use kona_mpt::{TrieDBFetcher, NoopTrieDBHinter};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
@@ -60,27 +60,4 @@ impl TrieDBFetcher for ZkvmTrieDBFetcher {
 }
 
 /// A [TrieDBHinter] for usage in zkVM programs.
-pub struct ZkvmTrieDBHinter;
-
-impl ZkvmTrieDBHinter {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-impl TrieDBHinter for ZkvmTrieDBHinter {
-    fn hint_trie_node(&self, _hash: B256) -> Result<()> {
-        // TODO: implement this method.
-        Ok(())
-    }
-
-    fn hint_account_proof(&self, _address: Address, _block_number: u64) -> Result<()> {
-        // TODO: implement this method.
-        Ok(())
-    }
-
-    fn hint_storage_proof(&self, _address: Address, _slot: U256, _block_number: u64) -> Result<()> {
-        // TODO: implement this method.
-        Ok(())
-    }
-}
+pub type ZkvmTrieDBHinter = NoopTrieDBHinter;

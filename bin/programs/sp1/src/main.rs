@@ -30,7 +30,7 @@ pub fn main() {
     fetcher.verify();
     println!("Done verifying fetcher.");
 
-    let hinter = ZkvmTrieDBHinter::new();
+    let hinter = ZkvmTrieDBHinter {};
     let payload_attrs: L2PayloadAttributes = sp1_zkvm::io::read();
 
     let mut l2_block_executor =
