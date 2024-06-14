@@ -13,11 +13,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Download sp1up
-      uses: curl -L https://sp1.succinct.xyz | bash
+    # - name: Download sp1up
+    #   uses: curl -L https://sp1.succinct.xyz | bash
 
-    - name: Install SP1
-      uses: sp1up
+    # - name: Install SP1
+    #   uses: sp1up
 
     # - name: Push SP1 program
     #   uses: pushd bin/programs/sp1
