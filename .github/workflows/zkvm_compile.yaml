@@ -13,12 +13,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Navigate to zkvm_host directory
-      run: cd bin/zkvm-host
+    # - name: Navigate to zkvm_host directory
+    #   run: cd bin/zkvm-host
 
     - name: Build zkvm_host
-      run: bash ./build.sh
+      run: bash bin/zkvm-host/build.sh
 
     - name: Run zkvm_host
-      run: cargo run --release
+      run: cargo run --manifest-path bin/zkvm_host/Cargo.toml --release
       timeout-minutes: 20
