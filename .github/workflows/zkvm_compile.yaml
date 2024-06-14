@@ -1,0 +1,24 @@
+name: Build and Run zkvm_host
+
+on:
+  pull_request:
+    branches:
+      - zkvm
+
+jobs:
+  build_and_run:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Navigate to zkvm_host directory
+      run: cd bin/zkvm_host
+
+    - name: Build zkvm_host
+      run: bash build.sh
+
+    - name: Run zkvm_host
+      run: cargo run --release
+      timeout-minutes: 20
