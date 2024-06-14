@@ -15,6 +15,7 @@ const ELF: &[u8] = include_bytes!("../../../elf/riscv32im-succinct-zkvm-elf");
 fn main() {
     // This data is taken from the test [test_l2_block_executor_small_block] in the [kona-client]
     // crate.
+    // TODO: This calls relative to being in this directory, which fails if we call `cargo --bin zkvm-host` from root.
     let testdata_folder = "block_120794432_exec";
     let file_name = format!("../programs/client/testdata/{}/output.json", testdata_folder);
     let fetcher = ZkvmTrieDBFetcher::from_file(&file_name);
