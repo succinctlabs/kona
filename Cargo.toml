@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/*", "bin/host", "bin/programs/*"]
+members = ["crates/*", "bin/zkvm-host", "bin/host", "bin/programs/*"]
 exclude = ["fpvm-tests/cannon-rs-tests"]
 resolver = "2"
 
@@ -19,6 +19,8 @@ cfg-if = "1.0.0"
 spin = { version = "0.9.8", features = ["mutex"] }
 lru = "0.12.3"
 async-trait = "0.1.80"
+serde = { version = "1.0.198", features = ["derive"] }
+serde_json = { version = "1.0.117", default-features = false }
 
 # Ethereum
 alloy-primitives = { version = "0.7.6", default-features = false }

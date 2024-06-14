@@ -1,0 +1,14 @@
+[package]
+version = "0.1.0"
+name = "stf-program"
+edition = "2021"
+
+[dependencies]
+sp1-zkvm = { git = "https://github.com/succinctlabs/sp1.git", rev = "v1.0.0-testnet"  }
+kona-client = { path = "../client", version = "0.1.0" }
+kona-mpt = { path = "../../../crates/mpt", version = "0.0.1" }
+kona-zkvm = { path = "../../../crates/zkvm", version = "0.0.1" }
+kona-derive = { path = "../../../crates/derive", version = "0.0.1" }
+alloy-consensus.workspace = true
+alloy-primitives.workspace = true
+alloy-rlp.workspace = true

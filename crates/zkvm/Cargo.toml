@@ -1,0 +1,29 @@
+[package]
+name = "kona-zkvm"
+description = "SP1 implementations of various traits needed for SP1"
+version = "0.0.1"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+# workspace
+anyhow.workspace = true
+cfg-if.workspace = true
+tracing.workspace = true
+alloy-primitives.workspace = true
+async-trait.workspace = true
+alloy-consensus.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+alloy-rlp.workspace = true
+# local
+kona-common = { path = "../common", version = "0.0.1" }
+kona-mpt = { path = "../mpt", version = "0.0.1" }
+
+
+[dev-dependencies]
+tokio = { version = "1.38.0", features = ["full"] }
+tempfile = "3.10.1"
