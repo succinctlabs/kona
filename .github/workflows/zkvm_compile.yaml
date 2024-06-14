@@ -17,7 +17,7 @@ jobs:
     - name: Refresh bash
       run: source /home/runner/.bashrc
     - name: check
-      run: vim /home/runner/.bashrc
+      run: cat /home/runner/.bashrc
     - name: Install SP1
       run: sp1up
     - name: Refresh bash
