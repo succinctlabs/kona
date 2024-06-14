@@ -13,11 +13,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # - name: Navigate to zkvm_host directory
-    #   run: cd bin/zkvm-host
+    - name: Download sp1up
+      uses: curl -L https://sp1.succinct.xyz | bash
 
-    - name: Build zkvm_host
-      run: bash bin/zkvm-host/build.sh
+    - name: Install SP1
+      uses: sp1up
+
+    - name: Push SP1 program
+      uses: pushd bin/programs/sp1
+
+    - name: Compile the client program
+      uses: cargo prove build --ignore-rust-version
+
+    - name: Pop
+      uses: popd
 
     - name: Run zkvm_host
       run: cargo run --manifest-path bin/zkvm_host/Cargo.toml --release
