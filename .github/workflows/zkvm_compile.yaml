@@ -15,9 +15,9 @@ jobs:
     - name: Download & install SP1
       run: curl -L https://sp1.succinct.xyz | bash
     - name: Install SP1
-      run: source /home/runner/.bashrc
+      run: source /home/runner/.bashrc && sp1up
     - name: Refresh bash
-      run: source ~/.bashrc
+      run: source /home/runner/.bashrc
     - name: Push SP1 program
       run: pushd bin/programs/sp1
     - name: Compile the client program
