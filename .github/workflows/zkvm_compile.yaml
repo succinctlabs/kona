@@ -20,5 +20,5 @@ jobs:
       run: /home/runner/.config/.sp1/bin/cargo-prove prove build --ignore-rust-version
       working-directory: bin/programs/sp1
     - name: Run zkvm_host
-      run: cargo run --bin zkvm_host --release
+      run: cargo run --bin zkvm-host --release
       timeout-minutes: 20
