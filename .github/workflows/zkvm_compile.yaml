@@ -14,8 +14,10 @@ jobs:
       uses: actions/checkout@v3
     - name: Download & install SP1
       run: curl -L https://sp1.succinct.xyz | bash
+    - name: Refresh bash
+      run: source /home/runner/.bashrc
     - name: Install SP1
-      run: source /home/runner/.bashrc && sp1up
+      run: sp1up
     - name: Refresh bash
       run: source /home/runner/.bashrc
     - name: Push SP1 program
