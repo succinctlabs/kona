@@ -12,15 +12,17 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-    - name: Download sp1up
+    - name: Download & install SP1
       run: |
         curl -L https://sp1.succinct.xyz | bash
+        source /home/runner/.bashrc
         source ~/.bashrc
-        sp1up
-        source ~/.bashrc
-        pushd bin/programs/sp1
-        cargo prove build --ignore-rust-version
-        popd
+    - name: Push SP1 program
+      run: pushd bin/programs/sp1
+    - name: Compile the client program
+      run: cargo prove build --ignore-rust-version
+    - name: Pop
+      run: popd
     - name: Run zkvm_host
       run: cargo run --manifest-path bin/zkvm_host/Cargo.toml --release
       timeout-minutes: 20
