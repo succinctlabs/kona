@@ -1,0 +1,25 @@
+name: Build and Run zkvm_host
+
+on:
+  pull_request:
+    branches:
+      - zkvm
+
+jobs:
+  build_and_run:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Download SP1
+      run: curl -L https://sp1.succinct.xyz | bash
+    - name: Install SP1
+      run: /home/runner/.config/.sp1/bin/sp1up
+    - name: Compile the client program
+      run: /home/runner/.config/.sp1/bin/cargo-prove prove build --ignore-rust-version
+      working-directory: bin/programs/sp1
+    - name: Run zkvm_host
+      run: cargo run --release
+      working-directory: bin/zkvm-host
+      timeout-minutes: 20
