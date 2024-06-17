@@ -36,6 +36,7 @@ impl ZkvmTrieDBFetcher {
                     todo!();
                 },
                 PreimageKeyType::Keccak256 => {
+                    // TODO: If this is only called in zkVM, can use accelerated keccak.
                     let hashed_value = keccak256(value.as_ref());
                     let derived_key = PreimageKey::new(hashed_value, PreimageKeyType::Keccak256);
                     assert_eq!(derived_key, *key);
