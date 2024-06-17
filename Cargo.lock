@@ -3108,6 +3108,7 @@ dependencies = [
  "cfg-if",
  "kona-common",
  "kona-mpt",
+ "kona-preimage",
  "serde",
  "serde_json",
  "tempfile",

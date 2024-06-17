@@ -3,6 +3,7 @@ use alloy_primitives::{keccak256, Bytes, B256};
 use alloy_rlp::Decodable;
 use anyhow::{anyhow, Result};
 use kona_mpt::{TrieDBFetcher, NoopTrieDBHinter};
+use kona_preimage::{PreimageKey, PreimageKeyType}
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
