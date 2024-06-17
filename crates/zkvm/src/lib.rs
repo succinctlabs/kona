@@ -31,7 +31,7 @@ impl ZkvmTrieDBFetcher {
         for (key, value) in self.preimages.iter() {
             match key.key_type() {
                 PreimageKeyType::Local => {
-                    // This will probably require returning some values
+                    // This will require returning some values
                     // to commit from zkvm program.
                     todo!();
                 },
