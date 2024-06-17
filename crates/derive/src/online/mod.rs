@@ -5,8 +5,8 @@ pub use crate::{
     pipeline::{DerivationPipeline, PipelineBuilder},
     sources::EthereumDataSource,
     stages::StatefulAttributesBuilder,
-    traits::Pipeline,
-    types::RollupConfig,
+    traits::{ChainProvider, L2ChainProvider, OriginProvider, Pipeline},
+    types::{BlockInfo, RollupConfig},
 };
 
 mod pipeline;
@@ -14,9 +14,6 @@ pub use pipeline::{
     new_online_pipeline, OnlineAttributesBuilder, OnlineAttributesQueue, OnlineDataProvider,
     OnlinePipeline,
 };
-
-mod validation;
-pub use validation::{OnlineValidator, Validator};
 
 mod beacon_client;
 pub use beacon_client::{BeaconClient, OnlineBeaconClient};

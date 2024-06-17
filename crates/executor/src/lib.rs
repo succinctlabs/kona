@@ -1,14 +1,18 @@
-//! The block executor for the L2 client program. Operates off of a [TrieDB] backed [State],
-//! allowing for stateless block execution of OP Stack blocks.
+#![doc = include_str!("../README.md")]
+#![warn(missing_debug_implementations, missing_docs, unreachable_pub, rustdoc::all)]
+#![deny(unused_must_use, rust_2018_idioms)]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![no_std]
 
-use alloc::{sync::Arc, vec::Vec};
+extern crate alloc;
+
+use alloc::vec::Vec;
 use alloy_consensus::{Header, Sealable, Sealed, EMPTY_OMMER_ROOT_HASH, EMPTY_ROOT_HASH};
-use alloy_eips::eip2718::{Decodable2718, Encodable2718};
 use alloy_primitives::{address, keccak256, Address, Bytes, TxKind, B256, U256};
 use anyhow::{anyhow, Result};
 use kona_derive::types::{L2PayloadAttributes, RawTransaction, RollupConfig};
 use kona_mpt::{ordered_trie_with_encoder, TrieDB, TrieDBFetcher, TrieDBHinter};
-use op_alloy_consensus::{OpReceipt, OpReceiptEnvelope, OpReceiptWithBloom, OpTxEnvelope};
+use op_alloy_consensus::{Decodable2718, Encodable2718, OpReceiptEnvelope, OpTxEnvelope};
 use revm::{
     db::{states::bundle_state::BundleRetention, State},
     primitives::{
@@ -17,36 +21,32 @@ use revm::{
     },
     Evm, StateBuilder,
 };
-
-mod fetcher;
-pub use fetcher::{TrieDBHintWriter, TrieDBProvider};
+use tracing::{debug, info};
 
 mod eip4788;
-pub(crate) use eip4788::pre_block_beacon_root_contract_call;
+use eip4788::pre_block_beacon_root_contract_call;
 
 mod canyon;
-pub(crate) use canyon::ensure_create2_deployer_canyon;
+use canyon::ensure_create2_deployer_canyon;
 
 mod util;
-pub(crate) use util::{logs_bloom, wrap_receipt_with_bloom};
-
-use self::util::{extract_tx_gas_limit, is_system_transaction};
+use util::{extract_tx_gas_limit, is_system_transaction, logs_bloom, receipt_envelope_from_parts};
 
 /// The block executor for the L2 client program. Operates off of a [TrieDB] backed [State],
 /// allowing for stateless block execution of OP Stack blocks.
 #[derive(Debug)]
-pub struct StatelessL2BlockExecutor<F, H>
+pub struct StatelessL2BlockExecutor<'a, F, H>
 where
     F: TrieDBFetcher,
     H: TrieDBHinter,
 {
     /// The [RollupConfig].
-    config: Arc<RollupConfig>,
+    config: &'a RollupConfig,
     /// The inner state database component.
     state: State<TrieDB<F, H>>,
 }
 
-impl<F, H> StatelessL2BlockExecutor<F, H>
+impl<'a, F, H> StatelessL2BlockExecutor<'a, F, H>
 where
     F: TrieDBFetcher,
     H: TrieDBHinter,
@@ -54,7 +54,7 @@ where
     /// Constructs a new [StatelessL2BlockExecutor] with the given starting state root, parent hash,
     /// and [TrieDBFetcher].
     pub fn new(
-        config: Arc<RollupConfig>,
+        config: &'a RollupConfig,
         parent_header: Sealed<Header>,
         fetcher: F,
         hinter: H,
@@ -65,7 +65,7 @@ where
     }
 }
 
-impl<F, H> StatelessL2BlockExecutor<F, H>
+impl<'a, F, H> StatelessL2BlockExecutor<'a, F, H>
 where
     F: TrieDBFetcher,
     H: TrieDBHinter,
@@ -90,7 +90,7 @@ where
         // Prepare the `revm` environment.
         let initialized_block_env = Self::prepare_block_env(
             self.revm_spec_id(payload.timestamp),
-            self.config.as_ref(),
+            self.config,
             self.state.database.parent_block_header(),
             &payload,
         );
@@ -100,10 +100,18 @@ where
         let gas_limit =
             payload.gas_limit.ok_or(anyhow!("Gas limit not provided in payload attributes"))?;
 
+        info!(
+            target: "client_executor",
+            "Executing block # {block_number} | Gas limit: {gas_limit} | Tx count: {tx_len}",
+            block_number = block_number,
+            gas_limit = gas_limit,
+            tx_len = payload.transactions.len()
+        );
+
         // Apply the pre-block EIP-4788 contract call.
         pre_block_beacon_root_contract_call(
             &mut self.state,
-            self.config.as_ref(),
+            self.config,
             block_number,
             &initialized_cfg,
             &initialized_block_env,
@@ -111,7 +119,7 @@ where
         )?;
 
         // Ensure that the create2 contract is deployed upon transition to the Canyon hardfork.
-        ensure_create2_deployer_canyon(&mut self.state, self.config.as_ref(), payload.timestamp)?;
+        ensure_create2_deployer_canyon(&mut self.state, self.config, payload.timestamp)?;
 
         // Construct the EVM with the given configuration.
         // TODO(clabby): Accelerate precompiles w/ custom precompile handler.
@@ -168,39 +176,47 @@ where
                 .flatten();
 
             // Execute the transaction.
+            let tx_hash = keccak256(raw_transaction);
+            debug!(
+                target: "client_executor",
+                "Executing transaction: {tx_hash}",
+            );
             let result = evm.transact_commit().map_err(|e| anyhow!("Fatal EVM Error: {e}"))?;
+            debug!(
+                target: "client_executor",
+                "Transaction executed: {tx_hash} | Gas used: {gas_used} | Success: {status}",
+                gas_used = result.gas_used(),
+                status = result.is_success()
+            );
 
             // Accumulate the gas used by the transaction.
             cumulative_gas_used += result.gas_used();
 
             // Create receipt envelope.
-            let logs_bloom = logs_bloom(result.logs());
-            let receipt_envelope = wrap_receipt_with_bloom(
-                OpReceiptWithBloom {
-                    receipt: OpReceipt {
-                        status: result.is_success(),
-                        cumulative_gas_used: cumulative_gas_used as u128,
-                        logs: result.into_logs(),
-                        deposit_nonce: depositor
-                            .as_ref()
-                            .map(|depositor| depositor.account_info().unwrap_or_default().nonce),
-                        // The deposit receipt version was introduced in Canyon to indicate an
-                        // update to how receipt hashes should be computed
-                        // when set. The state transition process
-                        // ensures this is only set for post-Canyon deposit transactions.
-                        deposit_receipt_version: depositor
-                            .is_some()
-                            .then(|| self.config.is_canyon_active(payload.timestamp).then_some(1))
-                            .flatten(),
-                    },
-                    logs_bloom,
-                },
+            let receipt = receipt_envelope_from_parts(
+                result.is_success(),
+                cumulative_gas_used as u128,
+                result.logs(),
                 transaction.tx_type(),
+                depositor
+                    .as_ref()
+                    .map(|depositor| depositor.account_info().unwrap_or_default().nonce),
+                depositor
+                    .is_some()
+                    .then(|| self.config.is_canyon_active(payload.timestamp).then_some(1))
+                    .flatten(),
             );
-            receipts.push(receipt_envelope);
+            receipts.push(receipt);
         }
 
+        info!(
+            target: "client_executor",
+            "Transaction execution complete | Cumulative gas used: {cumulative_gas_used}",
+            cumulative_gas_used = cumulative_gas_used
+        );
+
         // Merge all state transitions into the cache state.
+        debug!(target: "client_executor", "Merging state transitions");
         self.state.merge_transitions(BundleRetention::Reverts);
 
         // Take the bundle state.
@@ -208,9 +224,13 @@ where
 
         // Recompute the header roots.
         let state_root = self.state.database.state_root(&bundle)?;
+
         let transactions_root = Self::compute_transactions_root(payload.transactions.as_slice());
-        let receipts_root =
-            Self::compute_receipts_root(&receipts, self.config.as_ref(), payload.timestamp);
+        let receipts_root = Self::compute_receipts_root(&receipts, self.config, payload.timestamp);
+        debug!(
+            target: "client_executor",
+            "Computed transactions root: {transactions_root} | receipts root: {receipts_root}",
+        );
 
         // The withdrawals root on OP Stack chains, after Canyon activation, is always the empty
         // root hash.
@@ -265,6 +285,15 @@ where
         }
         .seal_slow();
 
+        info!(
+            target: "client_executor",
+            "Sealed new header | Hash: {header_hash} | State root: {state_root} | Transactions root: {transactions_root} | Receipts root: {receipts_root}",
+            header_hash = header.seal(),
+            state_root = header.state_root,
+            transactions_root = header.transactions_root,
+            receipts_root = header.receipts_root,
+        );
+
         // Update the parent block hash in the state database.
         self.state.database.set_parent_block_header(header);
 
@@ -303,16 +332,32 @@ where
                 }
             };
 
-        // Construct the raw output.
         let parent_header = self.state.database.parent_block_header();
+
+        info!(
+            target: "client_executor",
+            "Computing output root | Version: {version} | State root: {state_root} | Storage root: {storage_root} | Block hash: {hash}",
+            version = OUTPUT_ROOT_VERSION,
+            state_root = self.state.database.parent_block_header().state_root,
+            hash = parent_header.seal(),
+        );
+
+        // Construct the raw output.
         let mut raw_output = [0u8; 128];
         raw_output[31] = OUTPUT_ROOT_VERSION;
         raw_output[32..64].copy_from_slice(parent_header.state_root.as_ref());
         raw_output[64..96].copy_from_slice(storage_root.as_ref());
         raw_output[96..128].copy_from_slice(parent_header.seal().as_ref());
+        let output_root = keccak256(raw_output);
+
+        info!(
+            target: "client_executor",
+            "Computed output root for block # {block_number} | Output root: {output_root}",
+            block_number = parent_header.number,
+        );
 
         // Hash the output and return
-        Ok(keccak256(raw_output))
+        Ok(output_root)
     }
 
     /// Returns the active [SpecId] for the executor.
@@ -418,9 +463,15 @@ where
             .next_block_excess_blob_gas()
             .or_else(|| spec_id.is_enabled_in(SpecId::ECOTONE).then_some(0))
             .map(|x| BlobExcessGasAndPrice::new(x as u64));
-        let next_block_base_fee = parent_header
-            .next_block_base_fee(config.base_fee_params_at_timestamp(payload_attrs.timestamp))
-            .unwrap_or_default();
+        // If the payload attribute timestamp is past canyon activation,
+        // use the canyon base fee params from the rollup config.
+        let base_fee_params = if config.is_canyon_active(payload_attrs.timestamp) {
+            config.canyon_base_fee_params.expect("Canyon base fee params not provided")
+        } else {
+            config.base_fee_params
+        };
+        let next_block_base_fee =
+            parent_header.next_block_base_fee(base_fee_params).unwrap_or_default();
 
         BlockEnv {
             number: U256::from(parent_header.number + 1),
@@ -581,6 +632,7 @@ mod test {
     use super::*;
     use alloy_primitives::{address, b256, hex};
     use alloy_rlp::Decodable;
+    use kona_derive::types::{OP_BASE_FEE_PARAMS, OP_CANYON_BASE_FEE_PARAMS};
     use kona_mpt::NoopTrieDBHinter;
     use serde::Deserialize;
     use std::{collections::HashMap, format};
@@ -640,6 +692,8 @@ mod test {
             canyon_time: Some(0),
             delta_time: Some(0),
             ecotone_time: Some(0),
+            base_fee_params: OP_BASE_FEE_PARAMS,
+            canyon_base_fee_params: Some(OP_CANYON_BASE_FEE_PARAMS),
             ..Default::default()
         };
 
@@ -651,7 +705,7 @@ mod test {
 
         // Initialize the block executor on block #120794431's post-state.
         let mut l2_block_executor = StatelessL2BlockExecutor::new(
-            Arc::new(rollup_config),
+            &rollup_config,
             header.seal_slow(),
             TestdataTrieDBFetcher::new("block_120794432_exec"),
             NoopTrieDBHinter,
@@ -691,6 +745,8 @@ mod test {
             canyon_time: Some(0),
             delta_time: Some(0),
             ecotone_time: Some(0),
+            base_fee_params: OP_BASE_FEE_PARAMS,
+            canyon_base_fee_params: Some(OP_CANYON_BASE_FEE_PARAMS),
             ..Default::default()
         };
 
@@ -702,7 +758,7 @@ mod test {
 
         // Initialize the block executor on block #121049888's post-state.
         let mut l2_block_executor = StatelessL2BlockExecutor::new(
-            Arc::new(rollup_config),
+            &rollup_config,
             parent_header.seal_slow(),
             TestdataTrieDBFetcher::new("block_121049889_exec"),
             NoopTrieDBHinter,
@@ -746,6 +802,8 @@ mod test {
             canyon_time: Some(0),
             delta_time: Some(0),
             ecotone_time: Some(0),
+            base_fee_params: OP_BASE_FEE_PARAMS,
+            canyon_base_fee_params: Some(OP_CANYON_BASE_FEE_PARAMS),
             ..Default::default()
         };
 
@@ -757,7 +815,7 @@ mod test {
 
         // Initialize the block executor on block #121003240's post-state.
         let mut l2_block_executor = StatelessL2BlockExecutor::new(
-            Arc::new(rollup_config),
+            &rollup_config,
             parent_header.seal_slow(),
             TestdataTrieDBFetcher::new("block_121003241_exec"),
             NoopTrieDBHinter,
@@ -808,6 +866,8 @@ mod test {
             canyon_time: Some(0),
             delta_time: Some(0),
             ecotone_time: Some(0),
+            base_fee_params: OP_BASE_FEE_PARAMS,
+            canyon_base_fee_params: Some(OP_CANYON_BASE_FEE_PARAMS),
             ..Default::default()
         };
 
@@ -819,7 +879,7 @@ mod test {
 
         // Initialize the block executor on block #121057302's post-state.
         let mut l2_block_executor = StatelessL2BlockExecutor::new(
-            Arc::new(rollup_config),
+            &rollup_config,
             parent_header.seal_slow(),
             TestdataTrieDBFetcher::new("block_121057303_exec"),
             NoopTrieDBHinter,
@@ -864,6 +924,8 @@ mod test {
             canyon_time: Some(0),
             delta_time: Some(0),
             ecotone_time: Some(0),
+            base_fee_params: OP_BASE_FEE_PARAMS,
+            canyon_base_fee_params: Some(OP_CANYON_BASE_FEE_PARAMS),
             ..Default::default()
         };
 
@@ -875,7 +937,7 @@ mod test {
 
         // Initialize the block executor on block #121057302's post-state.
         let mut l2_block_executor = StatelessL2BlockExecutor::new(
-            Arc::new(rollup_config),
+            &rollup_config,
             parent_header.seal_slow(),
             TestdataTrieDBFetcher::new("block_121065789_exec"),
             NoopTrieDBHinter,
@@ -929,6 +991,8 @@ mod test {
             canyon_time: Some(0),
             delta_time: Some(0),
             ecotone_time: Some(0),
+            base_fee_params: OP_BASE_FEE_PARAMS,
+            canyon_base_fee_params: Some(OP_CANYON_BASE_FEE_PARAMS),
             ..Default::default()
         };
 
@@ -940,7 +1004,7 @@ mod test {
 
         // Initialize the block executor on block #121135703's post-state.
         let mut l2_block_executor = StatelessL2BlockExecutor::new(
-            Arc::new(rollup_config),
+            &rollup_config,
             parent_header.seal_slow(),
             TestdataTrieDBFetcher::new("block_121135704_exec"),
             NoopTrieDBHinter,
