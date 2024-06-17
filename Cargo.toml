@@ -1,10 +1,6 @@
 [workspace]
-<<<<<<< HEAD
-members = ["crates/*", "bin/zkvm-host", "bin/host", "bin/programs/*"]
-=======
-members = ["crates/*", "bin/host", "bin/programs/*", "examples/*"]
-default-members = ["bin/host", "bin/programs/*"]
->>>>>>> zach/serde-preimage-flag
+members = ["crates/*", "bin/host", "bin/programs/*", "examples/*", "bin/zkvm-host"]
+default-members = ["bin/host", "bin/programs/*", "bin/zkvm-host"]
 exclude = ["fpvm-tests/cannon-rs-tests"]
 resolver = "2"
 

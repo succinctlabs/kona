@@ -699,7 +699,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c4b4d0bd25bd0b74681c0ad21497610ce1b7c91b1022cd21c80c6fbdd9476b0"
 
 [[package]]
-<<<<<<< HEAD
 name = "axum"
 version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -758,11 +757,6 @@ dependencies = [
 name = "backtrace"
 version = "0.3.73"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-=======
-name = "backtrace"
-version = "0.3.73"
-source = "registry+https://github.com/rust-lang/crates.io-index"
->>>>>>> zach/serde-preimage-flag
 checksum = "5cc23269a4f8976d0a4d2e7109211a419fe30e8d88d677cd60b6bc79c5732e0a"
 dependencies = [
  "addr2line",
@@ -2439,7 +2433,6 @@ name = "httparse"
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0e7a4dd27b9476dc40cb050d3632d3bba3a70ddbff012285f7f8559a1e7e545"
-<<<<<<< HEAD
 
 [[package]]
 name = "httpdate"
@@ -2470,8 +2463,6 @@ dependencies = [
  "tracing",
  "want",
 ]
-=======
->>>>>>> zach/serde-preimage-flag
 
 [[package]]
 name = "hyper"
@@ -3268,7 +3259,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
 name = "matchers"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3294,12 +3284,6 @@ name = "memuse"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2145869435ace5ea6ea3d35f59be559317ec9a0d04e1812d5f185a87b6d36f1a"
-=======
-name = "memchr"
-version = "2.7.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
->>>>>>> zach/serde-preimage-flag
 
 [[package]]
 name = "mime"
@@ -4342,7 +4326,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
 name = "rayon"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4375,11 +4358,6 @@ dependencies = [
 name = "redox_syscall"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-=======
-name = "redox_syscall"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
->>>>>>> zach/serde-preimage-flag
 checksum = "c82cf8cff14456045f55ec4241383baeff27af886adb72ffb2162f99911de0fd"
 dependencies = [
  "bitflags 2.5.0",
@@ -5038,7 +5016,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
 name = "serde_path_to_error"
 version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5055,16 +5032,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "79e674e01f999af37c49f70a6ede167a8a60b2503e56c5599532a65baa5969a0"
 dependencies = [
  "serde",
-=======
-name = "serde_repr"
-version = "0.1.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c64451ba24fc7a6a2d60fc75dd9c83c90903b19028d4eff35e88fc1e86564e9"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.66",
->>>>>>> zach/serde-preimage-flag
 ]
 
 [[package]]
@@ -5725,28 +5692,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81cdd64d312baedb58e21336b31bc043b77e01cc99033ce76ef539f78e965ebc"
 
 [[package]]
-<<<<<<< HEAD
 name = "subtle-encoding"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7dcb1ed7b8330c5eed5441052651dd7a12c75e2ed88f2ec024ae1fa3a5e59945"
 dependencies = [
  "zeroize",
-=======
-name = "superchain-primitives"
-version = "0.1.0"
-source = "git+https://github.com/ethereum-optimism/superchain-registry?branch=main#5c043f856591b32409c29f2317886ca43dec19fb"
-dependencies = [
- "alloy-consensus",
- "alloy-eips",
- "alloy-genesis",
- "alloy-primitives",
- "alloy-sol-types",
- "anyhow",
- "hashbrown",
- "serde",
- "serde_repr",
->>>>>>> zach/serde-preimage-flag
 ]
 
 [[package]]

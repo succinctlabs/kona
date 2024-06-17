@@ -46,9 +46,17 @@ impl ZkvmTrieDBFetcher {
                     todo!();
                 },
                 PreimageKeyType::Blob => {
+                    let blob_key_key = PreimageKey::new(key, PreimageKeyType::Keccak256);
+                    let blob_key = self.preimages.get(&blob_key_key).unwrap();
+
+                    let kzg_commitment = blob_key[..48].as_ref();
+                    let index = blob_key[72..];
+
+                    // Validate that kzg commitment at index opens up to value.
                     todo!();
                 },
                 PreimageKeyType::Precompile => {
+                    // Determine how to handle ecrecover, bn128 pair, and point eval.
                     todo!();
                 },
                 _ => unimplemented!(),
