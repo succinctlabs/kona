@@ -54,6 +54,7 @@ where
         l2_head: B256,
     ) -> Self {
         Self { kv_store, l1_provider, blob_provider, l2_provider, l2_head, last_hint: None }
+        // TODO: Do we need to add zkvm validation here that L2 Head is public value?
     }
 
     /// Set the last hint to be received.

@@ -31,8 +31,7 @@ impl ZkvmTrieDBFetcher {
         for (key, value) in self.preimages.iter() {
             match key.key_type() {
                 PreimageKeyType::Local => {
-                    // This will require returning some values
-                    // to commit from zkvm program.
+                    // TODO: This will require returning some values to commit from zkvm program.
                     todo!();
                 },
                 PreimageKeyType::Keccak256 => {
@@ -42,7 +41,7 @@ impl ZkvmTrieDBFetcher {
                     assert_eq!(derived_key, *key);
                 },
                 PreimageKeyType::Sha256 => {
-                    // Same as keccak but with sha256.
+                    // TODO: Same as keccak but with sha256.
                     todo!();
                 },
                 PreimageKeyType::Blob => {
@@ -53,10 +52,11 @@ impl ZkvmTrieDBFetcher {
                     let index = &blob_key[72..80];
 
                     // Validate that kzg commitment at index opens up to value.
+                    // TODO: Waiting on someone on Succinct team to tackle no_std c-kzg.
                     todo!();
                 },
                 PreimageKeyType::Precompile => {
-                    // Determine how to handle ecrecover, bn128 pair, and point eval.
+                    // TODO: Determine how to handle ecrecover, bn128 pair, and point eval.
                     todo!();
                 },
                 _ => unimplemented!(),

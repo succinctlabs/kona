@@ -9,6 +9,8 @@ use kona_zkvm::{ZkvmTrieDBFetcher, ZkvmTrieDBHinter};
 
 use sp1_sdk::{utils, ProverClient, SP1Stdin};
 
+mod public;
+
 const ELF: &[u8] = include_bytes!("../../../elf/riscv32im-succinct-zkvm-elf");
 
 fn main() {
@@ -75,7 +77,7 @@ fn main() {
     // cycle count.
     let client = ProverClient::mock();
 
-    let (mut public_values, report) = client.execute(ELF, stdin).unwrap();
+    let (public_values, report) = client.execute(ELF, stdin).unwrap();
     println!("Report: {}", report);
 
     // Then generate the real proof.
