@@ -68,14 +68,14 @@ impl ZkvmTrieDBFetcher {
 impl TrieDBFetcher for ZkvmTrieDBFetcher {
     fn trie_node_preimage(&self, key: B256) -> Result<Bytes> {
         self.preimages
-            .get(&key.try_into().unwrap())
+            .get(&PreimageKey::new(key.into(), PreimageKeyType::Keccak256))
             .cloned()
             .ok_or_else(|| anyhow!("Preimage not found for key: {}", key))
     }
 
     fn bytecode_by_hash(&self, code_hash: B256) -> Result<Bytes> {
         self.preimages
-            .get(&code_hash.try_into().unwrap())
+            .get(&PreimageKey::new(code_hash.into(), PreimageKeyType::Keccak256))
             .cloned()
             .ok_or_else(|| anyhow!("Bytecode not found for hash: {}", code_hash))
     }
@@ -83,7 +83,7 @@ impl TrieDBFetcher for ZkvmTrieDBFetcher {
     fn header_by_hash(&self, hash: B256) -> Result<Header> {
         let encoded_header = self
             .preimages
-            .get(&hash.try_into().unwrap())
+            .get(&PreimageKey::new(hash.into(), PreimageKeyType::Keccak256))
             .ok_or_else(|| anyhow!("Header not found for hash: {}", hash))?;
         // TODO: there might be an optimization where we can cache the header decoding if we are
         // decoding the same header many times.
