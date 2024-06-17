@@ -11,7 +11,7 @@ use std::collections::HashMap;
 /// A [TrieDBFetcher] for usage in zkVM programs.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ZkvmTrieDBFetcher {
-    preimages: HashMap<B256, Bytes>,
+    preimages: HashMap<PreimageKey, Bytes>,
 }
 
 impl ZkvmTrieDBFetcher {
@@ -19,7 +19,7 @@ impl ZkvmTrieDBFetcher {
     /// Constructs a new [ZkvmTrieDBFetcher] from a testdata file. Only available in the host
     /// environment.
     pub fn from_file(file_name: &str) -> Self {
-        let preimages = serde_json::from_str::<HashMap<B256, Bytes>>(
+        let preimages = serde_json::from_str::<HashMap<PreimageKey, Bytes>>(
             &std::fs::read_to_string(file_name).unwrap(),
         )
         .unwrap();
@@ -29,7 +29,29 @@ impl ZkvmTrieDBFetcher {
     /// Verifies that all preimages in the [ZkvmTrieDBFetcher] are correct.
     pub fn verify(&self) {
         for (key, value) in self.preimages.iter() {
-            assert_eq!(keccak256(value), *key);
+            match key.key_type() {
+                PreimageKeyType::Local => {
+                    // This will probably require returning some values
+                    // to commit from zkvm program.
+                    todo!();
+                },
+                PreimageKeyType::Keccak256 => {
+                    let hashed_value = keccak256(value.as_ref());
+                    let derived_key = PreimageKey::new(hashed_value, PreimageKeyType::Keccak256);
+                    assert_eq!(derived_key, *key);
+                },
+                PreimageKeyType::Sha256 => {
+                    // Same as keccak but with sha256.
+                    todo!();
+                },
+                PreimageKeyType::Blob => {
+                    todo!();
+                },
+                PreimageKeyType::Precompile => {
+                    todo!();
+                },
+                _ => unimplemented!(),
+            }
         }
     }
 }

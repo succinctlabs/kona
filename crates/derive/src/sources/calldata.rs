@@ -7,6 +7,7 @@ use crate::{
 use alloc::{boxed::Box, collections::VecDeque};
 use alloy_consensus::{Transaction, TxEnvelope};
 use alloy_primitives::{Address, Bytes, TxKind};
+use anyhow::Result;
 use async_trait::async_trait;
 
 /// A data iterator that reads from calldata.
@@ -17,8 +18,8 @@ where
 {
     /// The chain provider to use for the calldata source.
     chain_provider: CP,
-    /// The address of the batcher contract.
-    batcher_address: Address,
+    /// The batch inbox address.
+    batch_inbox_address: Address,
     /// Block Ref
     block_ref: BlockInfo,
     /// The L1 Signer.
@@ -33,13 +34,13 @@ impl<CP: ChainProvider + Send> CalldataSource<CP> {
     /// Creates a new calldata source.
     pub fn new(
         chain_provider: CP,
-        batcher_address: Address,
+        batch_inbox_address: Address,
         block_ref: BlockInfo,
         signer: Address,
     ) -> Self {
         Self {
             chain_provider,
-            batcher_address,
+            batch_inbox_address,
             block_ref,
             signer,
             calldata: VecDeque::new(),
@@ -48,7 +49,7 @@ impl<CP: ChainProvider + Send> CalldataSource<CP> {
     }
 
     /// Loads the calldata into the source if it is not open.
-    async fn load_calldata(&mut self) -> anyhow::Result<()> {
+    async fn load_calldata(&mut self) -> Result<()> {
         if self.open {
             return Ok(());
         }
@@ -67,7 +68,7 @@ impl<CP: ChainProvider + Send> CalldataSource<CP> {
                 };
                 let TxKind::Call(to) = tx_kind else { return None };
 
-                if to != self.batcher_address {
+                if to != self.batch_inbox_address {
                     return None;
                 }
                 if tx.recover_public_key().ok()? != self.signer {

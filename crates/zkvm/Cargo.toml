@@ -22,7 +22,7 @@ alloy-rlp.workspace = true
 # local
 kona-common = { path = "../common", version = "0.0.1" }
 kona-mpt = { path = "../mpt", version = "0.0.1" }
-kona-preimage = { path = "../preimage", version = "0.0.1" }
+kona-preimage = { path = "../preimage", version = "0.0.1", features = ["serde"] }
 
 
 [dev-dependencies]
