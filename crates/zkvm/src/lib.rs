@@ -3,7 +3,7 @@ use alloy_primitives::{keccak256, Bytes, B256};
 use alloy_rlp::Decodable;
 use anyhow::{anyhow, Result};
 use kona_mpt::{TrieDBFetcher, NoopTrieDBHinter};
-use kona_preimage::{PreimageKey, PreimageKeyType}
+use kona_preimage::{PreimageKey, PreimageKeyType};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
@@ -38,7 +38,7 @@ impl ZkvmTrieDBFetcher {
                 PreimageKeyType::Keccak256 => {
                     // TODO: If this is only called in zkVM, can use accelerated keccak.
                     let hashed_value = keccak256(value.as_ref());
-                    let derived_key = PreimageKey::new(hashed_value, PreimageKeyType::Keccak256);
+                    let derived_key = PreimageKey::new(hashed_value.into(), PreimageKeyType::Keccak256);
                     assert_eq!(derived_key, *key);
                 },
                 PreimageKeyType::Sha256 => {
@@ -46,11 +46,11 @@ impl ZkvmTrieDBFetcher {
                     todo!();
                 },
                 PreimageKeyType::Blob => {
-                    let blob_key_key = PreimageKey::new(key, PreimageKeyType::Keccak256);
+                    let blob_key_key = PreimageKey::new(key.clone().into(), PreimageKeyType::Keccak256);
                     let blob_key = self.preimages.get(&blob_key_key).unwrap();
 
                     let kzg_commitment = blob_key[..48].as_ref();
-                    let index = blob_key[72..];
+                    let index = &blob_key[72..80];
 
                     // Validate that kzg commitment at index opens up to value.
                     todo!();
@@ -68,14 +68,14 @@ impl ZkvmTrieDBFetcher {
 impl TrieDBFetcher for ZkvmTrieDBFetcher {
     fn trie_node_preimage(&self, key: B256) -> Result<Bytes> {
         self.preimages
-            .get(&key)
+            .get(&key.try_into().unwrap())
             .cloned()
             .ok_or_else(|| anyhow!("Preimage not found for key: {}", key))
     }
 
     fn bytecode_by_hash(&self, code_hash: B256) -> Result<Bytes> {
         self.preimages
-            .get(&code_hash)
+            .get(&code_hash.try_into().unwrap())
             .cloned()
             .ok_or_else(|| anyhow!("Bytecode not found for hash: {}", code_hash))
     }
@@ -83,7 +83,7 @@ impl TrieDBFetcher for ZkvmTrieDBFetcher {
     fn header_by_hash(&self, hash: B256) -> Result<Header> {
         let encoded_header = self
             .preimages
-            .get(&hash)
+            .get(&hash.try_into().unwrap())
             .ok_or_else(|| anyhow!("Header not found for hash: {}", hash))?;
         // TODO: there might be an optimization where we can cache the header decoding if we are
         // decoding the same header many times.
