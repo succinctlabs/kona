@@ -6830,6 +6830,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "zkvm-client"
+version = "0.1.0"
+dependencies = [
+ "alloy-consensus",
+ "alloy-eips",
+ "alloy-primitives",
+ "alloy-rlp",
+ "anyhow",
+ "async-trait",
+ "cfg-if",
+ "kona-common",
+ "kona-common-proc",
+ "kona-derive",
+ "kona-mpt",
+ "kona-preimage",
+ "lru",
+ "op-alloy-consensus",
+ "revm",
+ "serde",
+ "serde_json",
+ "spin 0.9.8",
+]
+
+[[package]]
 name = "zkvm-host"
 version = "0.1.0"
 dependencies = [
