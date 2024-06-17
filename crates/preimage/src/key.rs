@@ -116,15 +116,6 @@ impl TryFrom<[u8; 32]> for PreimageKey {
     }
 }
 
-impl TryFrom<B256> for PreimageKey {
-    type Error = anyhow::Error;
-
-    fn try_from(value: B256) -> Result<Self, Self::Error> {
-        let raw: [u8; 32] = value.into();
-        Self::try_from(raw)
-    }
-}
-
 impl core::fmt::Display for PreimageKey {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let raw: [u8; 32] = (*self).into();

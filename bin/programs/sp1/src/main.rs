@@ -9,8 +9,6 @@ use kona_executor::StatelessL2BlockExecutor;
 use kona_derive::types::{L2PayloadAttributes, OP_MAINNET_CONFIG};
 use kona_zkvm::{ZkvmTrieDBFetcher, ZkvmTrieDBHinter};
 
-
-
 pub fn main() {
     let rollup_config = OP_MAINNET_CONFIG;
 
