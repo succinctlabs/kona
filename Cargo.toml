@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/*", "bin/host", "bin/programs/*", "examples/*", "bin/zkvm-host"]
+members = ["crates/*", "bin/zkvm-host", "bin/host", "bin/programs/*", "examples/*"]
 default-members = ["bin/host", "bin/programs/*", "bin/zkvm-host"]
 exclude = ["fpvm-tests/cannon-rs-tests"]
 resolver = "2"
