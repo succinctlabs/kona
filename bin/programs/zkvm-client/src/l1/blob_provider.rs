@@ -53,7 +53,7 @@ impl OracleBlobProvider {
             .await?;
 
         // ZKVM Constraint: sha256(commitment) = blob_hash.hash
-        assert_eq!(sha256::digest(&commitment), blob_hash.hash, "get_blob - zkvm constraint failed")
+        assert_eq!(sha256::digest(&commitment), blob_hash.hash, "get_blob - zkvm constraint failed");
 
         // Reconstruct the blob from the 4096 field elements.
         let mut blob = Blob::default();

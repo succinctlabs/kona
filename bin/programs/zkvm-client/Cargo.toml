@@ -43,7 +43,3 @@ sp1-zkvm = { git = "https://github.com/succinctlabs/sp1.git", rev = "v1.0.5-test
 
 [features]
 tracing-subscriber = ["dep:tracing-subscriber"]
-
-[[bin]]
-name = "kona"
-path = "src/kona.rs"
