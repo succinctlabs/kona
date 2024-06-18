@@ -10,6 +10,8 @@ kona-mpt = { path = "../../../crates/mpt", version = "0.0.1" }
 kona-zkvm = { path = "../../../crates/zkvm", version = "0.0.1" }
 kona-derive = { path = "../../../crates/derive", version = "0.0.1" }
 kona-executor = { path = "../../../crates/executor", version = "0.0.1" }
+kona-common = { path = "../../../crates/common", version = "0.0.1" }
+kona-preimage = { path = "../../../crates/preimage", version = "0.0.1" }
 alloy-consensus.workspace = true
 alloy-primitives.workspace = true
 alloy-rlp.workspace = true
@@ -19,3 +21,5 @@ reth-chainspec = { git = "https://github.com/paradigmxyz/reth", default-features
 reth-revm = { git = "https://github.com/paradigmxyz/reth" }
 reth-evm = { git = "https://github.com/paradigmxyz/reth" }
 revm.workspace = true
+cfg-if.workspace = true
+anyhow.workspace = true
