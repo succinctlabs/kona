@@ -1,19 +1,15 @@
 //! Contains online pipeline types.
 
-use crate::{
-    online::{
-        AlloyChainProvider, AlloyL2ChainProvider, OnlineBeaconClient, OnlineBlobProvider,
-        SimpleSlotDerivation,
-    },
-    pipeline::{DerivationPipeline, PipelineBuilder},
-    sources::EthereumDataSource,
-    stages::{
-        AttributesQueue, BatchQueue, ChannelBank, ChannelReader, FrameQueue, L1Retrieval,
-        L1Traversal, StatefulAttributesBuilder,
-    },
-    types::RollupConfig,
+use super::{
+    AlloyChainProvider, AlloyL2ChainProvider, BlockInfo, DerivationPipeline, EthereumDataSource,
+    OnlineBeaconClient, OnlineBlobProvider, PipelineBuilder, RollupConfig, SimpleSlotDerivation,
+    StatefulAttributesBuilder,
 };
 use alloc::sync::Arc;
+// Pipeline internal stages aren't re-exported at the module-level.
+use crate::stages::{
+    AttributesQueue, BatchQueue, ChannelBank, ChannelReader, FrameQueue, L1Retrieval, L1Traversal,
+};
 
 /// An online derivation pipeline.
 pub type OnlinePipeline =
@@ -47,6 +43,7 @@ pub fn new_online_pipeline(
     dap_source: OnlineDataProvider,
     l2_chain_provider: AlloyL2ChainProvider,
     builder: OnlineAttributesBuilder,
+    origin: BlockInfo,
 ) -> OnlinePipeline {
     PipelineBuilder::new()
         .rollup_config(rollup_config)
@@ -54,5 +51,6 @@ pub fn new_online_pipeline(
         .l2_chain_provider(l2_chain_provider)
         .chain_provider(chain_provider)
         .builder(builder)
+        .origin(origin)
         .build()
 }

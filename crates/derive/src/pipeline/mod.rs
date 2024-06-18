@@ -3,14 +3,14 @@
 /// Re-export trait arguments.
 pub use crate::traits::{
     ChainProvider, DataAvailabilityProvider, L2ChainProvider, NextAttributes, OriginAdvancer,
-    Pipeline, PreviousStage, ResetProvider, ResettableStage,
+    OriginProvider, Pipeline, PreviousStage, ResetProvider, ResettableStage,
 };
 
 /// Re-export stage types that are needed as inputs.
 pub use crate::stages::AttributesBuilder;
 
 /// Re-export commonly used types.
-pub use crate::types::{RollupConfig, StageError, StageResult};
+pub use crate::types::{BlockInfo, RollupConfig, StageError, StageResult};
 
 mod builder;
 pub use builder::PipelineBuilder;
