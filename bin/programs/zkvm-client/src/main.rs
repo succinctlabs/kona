@@ -40,6 +40,13 @@ fn main() {
     let l2_claim = sp1_zkvm::io::read();
     let l2_claim_block = sp1_zkvm::io::read();
     let chain_id = sp1_zkvm::io::read();
+
+    sp1_zkvm::io::commit(&l1_head);
+    sp1_zkvm::io::commit(&l2_output_root);
+    sp1_zkvm::io::commit(&l2_claim);
+    sp1_zkvm::io::commit(&l2_claim_block);
+    sp1_zkvm::io::commit(&chain_id);
+
     let boot = Arc::new(BootInfo::new(
         l1_head,
         l2_output_root,
