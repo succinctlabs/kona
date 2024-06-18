@@ -66,12 +66,16 @@ where
     pub async fn get_preimage(&self, key: B256) -> Result<Vec<u8>> {
         trace!(target: "fetcher", "Pre-image requested. Key: {key}");
 
+
         // Acquire a read lock on the key-value store.
         let kv_lock = self.kv_store.read().await;
         let mut preimage = kv_lock.get(key);
 
         // Drop the read lock before beginning the retry loop.
         drop(kv_lock);
+
+        trace!(target: "fetcher", "Do we have the preimage?: {:?}", preimage.is_some());
+        trace!(target: "fetcher", "Last hint: {:?}", self.last_hint.as_deref());
 
         // Use a loop to keep retrying the prefetch as long as the key is not found
         while preimage.is_none() && self.last_hint.is_some() {

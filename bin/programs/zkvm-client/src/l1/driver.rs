@@ -4,7 +4,7 @@
 //! [L2PayloadAttributes]: kona_derive::types::L2PayloadAttributes
 
 use super::{OracleBlobProvider, OracleL1ChainProvider};
-use crate::{l2::OracleL2ChainProvider, BootInfo, Oracle};
+use crate::{l2::OracleL2ChainProvider, BootInfo, Oracle, HintType, HINT_WRITER};
 use alloc::sync::Arc;
 use alloy_consensus::{Header, Sealed};
 use alloy_primitives::keccak256;
@@ -20,7 +20,7 @@ use kona_derive::{
     traits::{ChainProvider, L2ChainProvider},
 };
 use kona_mpt::TrieDBFetcher;
-use kona_preimage::{PreimageKey, PreimageKeyType, PreimageOracleClient};
+use kona_preimage::{PreimageKey, PreimageKeyType, PreimageOracleClient, HintWriterClient};
 use kona_primitives::{BlockInfo, L2AttributesWithParent, L2BlockInfo};
 use tracing::{info, warn};
 
@@ -168,6 +168,10 @@ impl DerivationDriver {
         l2_chain_provider: &mut OracleL2ChainProvider,
     ) -> Result<(BlockInfo, L2BlockInfo, Sealed<Header>)> {
         // Find the initial safe head, based off of the starting L2 block number in the boot info.
+        HINT_WRITER
+            .write(&HintType::StartingL2Output.encode_with(&[boot_info.l2_output_root.as_ref()]))
+            .await?;
+
         let mut output_preimage = [0u8; 128];
         caching_oracle
             .get_exact(
