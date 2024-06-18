@@ -4,7 +4,7 @@
 //! [L2PayloadAttributes]: kona_derive::types::L2PayloadAttributes
 
 use super::{OracleBlobProvider, OracleL1ChainProvider};
-use crate::{l2::OracleL2ChainProvider, BootInfo, InMemoryOracle};
+use crate::{l2::OracleL2ChainProvider, BootInfo, Oracle};
 use alloc::sync::Arc;
 use alloy_consensus::{Header, Sealed};
 use alloy_primitives::keccak256;
@@ -20,7 +20,7 @@ use kona_derive::{
     traits::{ChainProvider, L2ChainProvider},
 };
 use kona_mpt::TrieDBFetcher;
-use kona_preimage::{PreimageKey, PreimageKeyType, PreimageOracleClient};
+use kona_preimage::{PreimageKey, PreimageKeyType, PreimageOracleClient, HintWriterClient};
 use kona_primitives::{BlockInfo, L2AttributesWithParent, L2BlockInfo};
 use tracing::{info, warn};
 
@@ -93,7 +93,7 @@ impl DerivationDriver {
     /// - A new [DerivationDriver] instance.
     pub async fn new(
         boot_info: &BootInfo,
-        caching_oracle: &InMemoryOracle,
+        caching_oracle: &Oracle,
         blob_provider: OracleBlobProvider,
         mut chain_provider: OracleL1ChainProvider,
         mut l2_chain_provider: OracleL2ChainProvider,
@@ -160,7 +160,7 @@ impl DerivationDriver {
     /// ## Returns
     /// - A tuple containing the L1 origin block information and the L2 safe head information.
     async fn find_startup_info(
-        caching_oracle: &InMemoryOracle,
+        caching_oracle: &Oracle,
         boot_info: &BootInfo,
         chain_provider: &mut OracleL1ChainProvider,
         l2_chain_provider: &mut OracleL2ChainProvider,

@@ -3,7 +3,7 @@
 //!
 //! [OracleReader]: kona_preimage::OracleReader
 
-use crate::ORACLE_READER;
+use super::ORACLE_READER;
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use anyhow::Result;
 use async_trait::async_trait;

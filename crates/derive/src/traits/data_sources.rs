@@ -16,12 +16,6 @@ pub trait BlobProvider {
         block_ref: &BlockInfo,
         blob_hashes: &[IndexedBlobHash],
     ) -> Result<Vec<Blob>, BlobProviderError>;
-
-    async fn get_blob(
-        &self,
-        block_ref: &BlockInfo,
-        blob_hash: &IndexedBlobHash,
-    ) -> Result<Blob, BlobProviderError>;
 }
 
 /// Describes the functionality of a data source that can provide data availability information.

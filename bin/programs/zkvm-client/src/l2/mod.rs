@@ -2,3 +2,6 @@
 
 mod chain_provider;
 pub use chain_provider::OracleL2ChainProvider;
+
+mod trie_hinter;
+pub use trie_hinter::TrieDBHintWriter;
