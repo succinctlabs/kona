@@ -1,16 +1,16 @@
 //! Contains the concrete implementation of the [ChainProvider] trait for the client program.
 
-use crate::{BootInfo, CachingOracle, HintType, HINT_WRITER};
+use crate::{BootInfo, InMemoryOracle};
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use alloy_consensus::{Header, Receipt, ReceiptEnvelope, TxEnvelope};
 use alloy_eips::eip2718::Decodable2718;
-use alloy_primitives::{Bytes, B256};
+use alloy_primitives::{Bytes, B256, keccak256};
 use alloy_rlp::Decodable;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use kona_derive::traits::ChainProvider;
 use kona_mpt::{OrderedListWalker, TrieDBFetcher};
-use kona_preimage::{HintWriterClient, PreimageKey, PreimageKeyType, PreimageOracleClient};
+use kona_preimage::{PreimageKey, PreimageKeyType, PreimageOracleClient};
 use kona_primitives::BlockInfo;
 
 /// The oracle-backed L1 chain provider for the client program.
@@ -19,12 +19,12 @@ pub struct OracleL1ChainProvider {
     /// The boot information
     boot_info: Arc<BootInfo>,
     /// The preimage oracle client.
-    oracle: Arc<CachingOracle>,
+    oracle: Arc<InMemoryOracle>,
 }
 
 impl OracleL1ChainProvider {
     /// Creates a new [OracleL1ChainProvider] with the given boot information and oracle client.
-    pub fn new(boot_info: Arc<BootInfo>, oracle: Arc<CachingOracle>) -> Self {
+    pub fn new(boot_info: Arc<BootInfo>, oracle: Arc<InMemoryOracle>) -> Self {
         Self { boot_info, oracle }
     }
 }
@@ -32,12 +32,12 @@ impl OracleL1ChainProvider {
 #[async_trait]
 impl ChainProvider for OracleL1ChainProvider {
     async fn header_by_hash(&mut self, hash: B256) -> Result<Header> {
-        // Send a hint for the block header.
-        HINT_WRITER.write(&HintType::L1BlockHeader.encode_with(&[hash.as_ref()])).await?;
-
         // Fetch the header RLP from the oracle.
         let header_rlp =
             self.oracle.get(PreimageKey::new(*hash, PreimageKeyType::Keccak256)).await?;
+
+        // ZKVM Constraint: keccak(header_rlp) = hash
+        assert_eq!(keccak256(&header_rlp), hash, "header_by_hash - zkvm constraint failed");
 
         // Decode the header RLP into a Header.
         Header::decode(&mut header_rlp.as_slice())
@@ -70,9 +70,7 @@ impl ChainProvider for OracleL1ChainProvider {
         // Fetch the block header to find the receipts root.
         let header = self.header_by_hash(hash).await?;
 
-        // Send a hint for the block's receipts, and walk through the receipts trie in the header to
-        // verify them.
-        HINT_WRITER.write(&HintType::L1Receipts.encode_with(&[hash.as_ref()])).await?;
+        // Walk through the receipts trie in the header to verify them.
         let trie_walker = OrderedListWalker::try_new_hydrated(header.receipts_root, self)?;
 
         // Decode the receipts within the transactions trie.
@@ -101,9 +99,7 @@ impl ChainProvider for OracleL1ChainProvider {
             timestamp: header.timestamp,
         };
 
-        // Send a hint for the block's transactions, and walk through the transactions trie in the
-        // header to verify them.
-        HINT_WRITER.write(&HintType::L1Transactions.encode_with(&[hash.as_ref()])).await?;
+        // Walk through the transactions trie in the header to verify them.
         let trie_walker = OrderedListWalker::try_new_hydrated(header.transactions_root, self)?;
 
         // Decode the transactions within the transactions trie.
@@ -124,10 +120,16 @@ impl TrieDBFetcher for OracleL1ChainProvider {
         // On L1, trie node preimages are stored as keccak preimage types in the oracle. We assume
         // that a hint for these preimages has already been sent, prior to this call.
         kona_common::block_on(async move {
-            self.oracle
+            let preimage = self.oracle
                 .get(PreimageKey::new(*key, PreimageKeyType::Keccak256))
                 .await
                 .map(Into::into)
+                .unwrap();
+
+            // ZKVM Constraint: keccak(node preimage) = hash
+            assert_eq!(keccak256(&preimage), key, "trie_node_preimage - zkvm constraint failed");
+
+            Ok(preimage)
         })
     }
 

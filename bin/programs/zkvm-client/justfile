@@ -5,33 +5,31 @@ default:
   @just --list
 
 # Run the client program natively with the hos
-run-client-native l1_rpc l1_beacon_rpc l2_rpc verbosity:
+run-client-native verbosity:
   #!/usr/bin/env bash
 
-  # TODO: These configuration values are currently mocked. Once they're consumed, 
+  # TODO: These configuration values are currently mocked. Once they're consumed,
   # update this to offer default run or optionally alter by pre-setting them.
   ROLLUP_CONFIG_PATH="x"
   L2_GENESIS_PATH="x"
-  L1_HEAD=$(cast 2b 0)
-  L2_HEAD=$(cast 2b 0)
-  L2_OUTPUT_ROOT=$(cast 2b 0)
-  L2_CLAIM=$(cast 2b 0)
-  L2_BLOCK_NUMBER=0
+  L1_HEAD=0x175b19156f79039d3fc039921905b303cdcc87b04d1b388ce563bd5a4f6061c7
+  L2_HEAD=0x9506905902f5c3613c5441a8697c09e7aafdb64082924d8bd2857f9e34a47a9a
+  L2_OUTPUT_ROOT=0xb8a465f44c168c4bffc43fcf933138a26a3410473dd2070052d5ea6cb366ac60
+  L2_CLAIM=0xb576409c0640c575de51d78cc0df71914dbd4ae4639c4782bdcbc9f6daf19620
+  L2_BLOCK_NUMBER=120794432
   L2_CHAIN_ID=10
+  L1_NODE_ADDRESS="https://eth-mainnet.g.alchemy.com/v2/hIxcf_hqT9It2hS8iCFeHKklL8tNyXNF"
+  L1_BEACON_ADDRESS="https://spring-sleek-tree.quiknode.pro/d3fdb44f639a48032227694b2911f7fb8bb56991"
+  L2_NODE_ADDRESS="https://opt-mainnet.g.alchemy.com/v2/wQZDr6NEXBfj7s8A0iIL2ZfS8_JL5Ddc"
+  DATA_DIR="./data"
 
-  L1_NODE_ADDRESS="{{l1_rpc}}"
-  L1_BEACON_ADDRESS="{{l1_beacon_rpc}}"
-  L2_NODE_ADDRESS="{{l2_rpc}}"
-
-  CLIENT_BIN_PATH="./target/release-client-lto/kona-client"
+  CLIENT_BIN_PATH="./target/release-client-lto/zkvm-client"
 
   echo "Building client program..."
-  cargo build --bin kona-client --profile release-client-lto
+  cargo build --profile release-client-lto
   echo "Running host program with native client program..."
   (cd ../../.. && cargo r --bin kona-host --release -- \
-    --rollup-config $ROLLUP_CONFIG_PATH \
     --network optimism \
-    --l2-genesis-path $L2_GENESIS_PATH \
     --l1-head $L1_HEAD \
     --l2-head $L2_HEAD \
     --l2-claim $L2_CLAIM \
@@ -41,5 +39,6 @@ run-client-native l1_rpc l1_beacon_rpc l2_rpc verbosity:
     --l1-node-address $L1_NODE_ADDRESS \
     --l1-beacon-address $L1_BEACON_ADDRESS \
     --l2-node-address $L2_NODE_ADDRESS \
+    --data-dir $DATA_DIR \
     --exec $CLIENT_BIN_PATH \
     {{verbosity}})

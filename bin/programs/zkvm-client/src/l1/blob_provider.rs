@@ -1,6 +1,6 @@
 //! Contains the concrete implementation of the [BlobProvider] trait for the client program.
 
-use crate::{CachingOracle, HintType, HINT_WRITER};
+use crate::InMemoryOracle;
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use alloy_consensus::Blob;
 use alloy_eips::eip4844::FIELD_ELEMENTS_PER_BLOB;
@@ -10,18 +10,19 @@ use kona_derive::{
     traits::BlobProvider,
     types::{BlobProviderError, IndexedBlobHash},
 };
-use kona_preimage::{HintWriterClient, PreimageKey, PreimageKeyType, PreimageOracleClient};
+
+use kona_preimage::{PreimageKey, PreimageKeyType, PreimageOracleClient};
 use kona_primitives::BlockInfo;
 
 /// An oracle-backed blob provider.
 #[derive(Debug, Clone)]
 pub struct OracleBlobProvider {
-    oracle: Arc<CachingOracle>,
+    oracle: Arc<InMemoryOracle>,
 }
 
 impl OracleBlobProvider {
     /// Constructs a new `OracleBlobProvider`.
-    pub fn new(oracle: Arc<CachingOracle>) -> Self {
+    pub fn new(oracle: Arc<InMemoryOracle>) -> Self {
         Self { oracle }
     }
 
@@ -44,14 +45,15 @@ impl OracleBlobProvider {
         blob_req_meta[32..40].copy_from_slice((blob_hash.index as u64).to_be_bytes().as_ref());
         blob_req_meta[40..48].copy_from_slice(block_ref.timestamp.to_be_bytes().as_ref());
 
-        // Send a hint for the blob commitment and field elements.
-        HINT_WRITER.write(&HintType::L1Blob.encode_with(&[blob_req_meta.as_ref()])).await?;
 
         // Fetch the blob commitment.
         let mut commitment = [0u8; 48];
         self.oracle
             .get_exact(PreimageKey::new(*blob_hash.hash, PreimageKeyType::Sha256), &mut commitment)
             .await?;
+
+        // ZKVM Constraint: sha256(commitment) = blob_hash.hash
+        assert_eq!(sha256::digest(&commitment), blob_hash.hash, "get_blob - zkvm constraint failed")
 
         // Reconstruct the blob from the 4096 field elements.
         let mut blob = Blob::default();
@@ -67,6 +69,9 @@ impl OracleBlobProvider {
                     &mut field_element,
                 )
                 .await?;
+
+            // TODO (zkvm constraint): opening(field_element_key[..48] at field_element_key[72..]) = field_element
+            // This will require c-kzg or similar
             blob[(i as usize) << 5..(i as usize + 1) << 5].copy_from_slice(field_element.as_ref());
         }
 

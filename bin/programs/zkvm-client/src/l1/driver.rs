@@ -4,9 +4,10 @@
 //! [L2PayloadAttributes]: kona_derive::types::L2PayloadAttributes
 
 use super::{OracleBlobProvider, OracleL1ChainProvider};
-use crate::{l2::OracleL2ChainProvider, BootInfo, CachingOracle, HintType, HINT_WRITER};
+use crate::{l2::OracleL2ChainProvider, BootInfo, InMemoryOracle};
 use alloc::sync::Arc;
 use alloy_consensus::{Header, Sealed};
+use alloy_primitives::keccak256;
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use kona_derive::{
@@ -19,7 +20,7 @@ use kona_derive::{
     traits::{ChainProvider, L2ChainProvider},
 };
 use kona_mpt::TrieDBFetcher;
-use kona_preimage::{HintWriterClient, PreimageKey, PreimageKeyType, PreimageOracleClient};
+use kona_preimage::{PreimageKey, PreimageKeyType, PreimageOracleClient};
 use kona_primitives::{BlockInfo, L2AttributesWithParent, L2BlockInfo};
 use tracing::{info, warn};
 
@@ -92,7 +93,7 @@ impl DerivationDriver {
     /// - A new [DerivationDriver] instance.
     pub async fn new(
         boot_info: &BootInfo,
-        caching_oracle: &CachingOracle,
+        caching_oracle: &InMemoryOracle,
         blob_provider: OracleBlobProvider,
         mut chain_provider: OracleL1ChainProvider,
         mut l2_chain_provider: OracleL2ChainProvider,
@@ -159,15 +160,12 @@ impl DerivationDriver {
     /// ## Returns
     /// - A tuple containing the L1 origin block information and the L2 safe head information.
     async fn find_startup_info(
-        caching_oracle: &CachingOracle,
+        caching_oracle: &InMemoryOracle,
         boot_info: &BootInfo,
         chain_provider: &mut OracleL1ChainProvider,
         l2_chain_provider: &mut OracleL2ChainProvider,
     ) -> Result<(BlockInfo, L2BlockInfo, Sealed<Header>)> {
         // Find the initial safe head, based off of the starting L2 block number in the boot info.
-        HINT_WRITER
-            .write(&HintType::StartingL2Output.encode_with(&[boot_info.l2_output_root.as_ref()]))
-            .await?;
         let mut output_preimage = [0u8; 128];
         caching_oracle
             .get_exact(
@@ -175,6 +173,13 @@ impl DerivationDriver {
                 &mut output_preimage,
             )
             .await?;
+
+        // ZKVM CONSTRAINT: keccak(output preimage) = l2_output_root
+        assert_eq!(
+            keccak256(&output_preimage),
+            *boot_info.l2_output_root,
+            "find_startup_info - zkvm constraint failed"
+        );
 
         let safe_hash =
             output_preimage[96..128].try_into().map_err(|_| anyhow!("Invalid L2 output root"))?;

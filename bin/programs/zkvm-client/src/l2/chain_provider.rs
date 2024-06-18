@@ -1,15 +1,15 @@
 //! Contains the concrete implementation of the [L2ChainProvider] trait for the client program.
 
-use crate::{BootInfo, CachingOracle, HintType, HINT_WRITER};
+use crate::{BootInfo, InMemoryOracle};
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use alloy_consensus::Header;
-use alloy_primitives::{Bytes, B256};
+use alloy_primitives::{Bytes, B256, keccak256};
 use alloy_rlp::Decodable;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use kona_derive::traits::L2ChainProvider;
 use kona_mpt::{OrderedListWalker, TrieDBFetcher};
-use kona_preimage::{HintWriterClient, PreimageKey, PreimageKeyType, PreimageOracleClient};
+use kona_preimage::{PreimageKey, PreimageKeyType, PreimageOracleClient};
 use kona_primitives::{
     L2BlockInfo, L2ExecutionPayloadEnvelope, OpBlock, RollupConfig, SystemConfig,
 };
@@ -21,12 +21,12 @@ pub struct OracleL2ChainProvider {
     /// The boot information
     boot_info: Arc<BootInfo>,
     /// The preimage oracle client.
-    oracle: Arc<CachingOracle>,
+    oracle: Arc<InMemoryOracle>,
 }
 
 impl OracleL2ChainProvider {
     /// Creates a new [OracleL2ChainProvider] with the given boot information and oracle client.
-    pub fn new(boot_info: Arc<BootInfo>, oracle: Arc<CachingOracle>) -> Self {
+    pub fn new(boot_info: Arc<BootInfo>, oracle: Arc<InMemoryOracle>) -> Self {
         Self { boot_info, oracle }
     }
 }
@@ -36,15 +36,17 @@ impl OracleL2ChainProvider {
     /// L2 safe head.
     async fn header_by_number(&mut self, block_number: u64) -> Result<Header> {
         // Fetch the starting L2 output preimage.
-        HINT_WRITER
-            .write(
-                &HintType::StartingL2Output.encode_with(&[self.boot_info.l2_output_root.as_ref()]),
-            )
-            .await?;
         let output_preimage = self
             .oracle
             .get(PreimageKey::new(*self.boot_info.l2_output_root, PreimageKeyType::Keccak256))
             .await?;
+
+        // ZKVM CONSTRAINT: keccak(output preimage) = l2_output_root
+        assert_eq!(
+            keccak256(&output_preimage),
+            self.boot_info.l2_output_root,
+            "find_startup_info - zkvm constraint failed"
+        );
 
         // Fetch the starting block header.
         let block_hash = output_preimage[96..128]
@@ -83,7 +85,6 @@ impl L2ChainProvider for OracleL2ChainProvider {
         let header_hash = header.hash_slow();
 
         // Fetch the transactions in the block.
-        HINT_WRITER.write(&HintType::L2Transactions.encode_with(&[header_hash.as_ref()])).await?;
         let trie_walker = OrderedListWalker::try_new_hydrated(transactions_root, self)?;
 
         // Decode the transactions within the transactions trie.
@@ -119,35 +120,49 @@ impl L2ChainProvider for OracleL2ChainProvider {
 
 impl TrieDBFetcher for OracleL2ChainProvider {
     fn trie_node_preimage(&self, key: B256) -> Result<Bytes> {
-        // On L2, trie node preimages are stored as keccak preimage types in the oracle. We assume
+        // On L1, trie node preimages are stored as keccak preimage types in the oracle. We assume
         // that a hint for these preimages has already been sent, prior to this call.
         kona_common::block_on(async move {
-            self.oracle
+            let preimage = self.oracle
                 .get(PreimageKey::new(*key, PreimageKeyType::Keccak256))
                 .await
                 .map(Into::into)
+                .unwrap();
+
+            // ZKVM Constraint: keccak(node preimage) = hash
+            assert_eq!(keccak256(&preimage), key, "L2 trie_node_preimage - zkvm constraint failed");
+
+            Ok(preimage)
         })
     }
 
     fn bytecode_by_hash(&self, hash: B256) -> Result<Bytes> {
         // Fetch the bytecode preimage from the caching oracle.
         kona_common::block_on(async move {
-            HINT_WRITER.write(&HintType::L2Code.encode_with(&[hash.as_ref()])).await?;
-
-            self.oracle
+            let bytecode = self.oracle
                 .get(PreimageKey::new(*hash, PreimageKeyType::Keccak256))
                 .await
                 .map(Into::into)
+                .unwrap();
+
+                // ZKVM Constraint: keccak(node preimage) = hash
+                assert_eq!(keccak256(&bytecode), hash, "L2 bytecode_by_hash - zkvm constraint failed");
+
+                Ok(bytecode)
         })
+
+        // CONSTRAINT: keccak(bytecode) = hash
     }
 
     fn header_by_hash(&self, hash: B256) -> Result<Header> {
         // Fetch the header from the caching oracle.
         kona_common::block_on(async move {
-            HINT_WRITER.write(&HintType::L2BlockHeader.encode_with(&[hash.as_ref()])).await?;
-
             let header_bytes =
                 self.oracle.get(PreimageKey::new(*hash, PreimageKeyType::Keccak256)).await?;
+
+            // ZKVM Constraint: keccak(header_bytes) = hash
+            assert_eq!(keccak256(&header_bytes), hash, "L2 header_by_hash - zkvm constraint failed");
+
             Header::decode(&mut header_bytes.as_slice())
                 .map_err(|e| anyhow!("Failed to RLP decode Header: {e}"))
         })
