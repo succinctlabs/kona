@@ -1,12 +1,9 @@
 //! A program to verify a Optimism L2 block STF in the zkVM.
 
-#![doc = include_str!("../README.md")]
-#![warn(missing_debug_implementations, missing_docs, unreachable_pub, rustdoc::all)]
-#![deny(unused_must_use, rust_2018_idioms)]
-#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![no_std]
+// #![cfg_attr(any(target_arch = "mips", target_arch = "riscv64", target_os = "zkvm"), no_main)]
 
-#![cfg_attr(any(target_arch = "mips", target_arch = "riscv64", target_os = "zkvm"), no_main)]
+#![cfg_attr(target_os = "zkvm", no_main)]
 
 mod l1;
 mod l2;
@@ -14,32 +11,35 @@ mod boot;
 mod oracle;
 mod hint;
 
-use alloc::{sync::Arc, vec::Vec};
-use alloy_consensus::Header;
-use kona_mpt::NoopTrieDBHinter;
-use kona_common_proc::client_entry;
 use l1::{DerivationDriver, OracleBlobProvider, OracleL1ChainProvider};
-use l2::{OracleL2ChainProvider, TrieDBHintWriter};
-use boot::{BootInfo, BootInfoWithoutRollupConfig};
-pub use oracle::{Oracle, InMemoryOracle, CachingOracle, HINT_WRITER};
-pub use hint::HintType;
+use l2::OracleL2ChainProvider;
+use boot::BootInfo;
+use oracle::{Oracle, InMemoryOracle, CachingOracle, HINT_WRITER};
+use hint::HintType;
+
 use kona_primitives::L2AttributesWithParent;
 use kona_executor::StatelessL2BlockExecutor;
+
 use cfg_if::cfg_if;
+use alloc::sync::Arc;
+use alloy_consensus::Header;
 
 extern crate alloc;
 
 /// The size of the LRU cache in the oracle.
 const ORACLE_LRU_SIZE: usize = 1024;
 
-// TODO: How does this work when we do ZKVM run? Is it compatible with zkvm::entrypoint, or need some cfg stuff?
 cfg_if! {
     if #[cfg(target_os = "zkvm")] {
-        use sp1_zkvm::entrypoint;
+        sp1_zkvm::entrypoint!(main);
+        use alloc::vec::Vec;
+        use kona_mpt::NoopTrieDBHinter;
+        use boot::BootInfoWithoutRollupConfig;
+    } else {
+        use l2::TrieDBHintWriter;
     }
 }
 
-#[cfg_attr(not(target_os = "zkvm"), client_entry(0x77359400))]
 fn main() {
 
     kona_common::block_on(async move {
