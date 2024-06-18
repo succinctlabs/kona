@@ -6,8 +6,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![no_std]
 
-#![no_main]
-sp1_zkvm::entrypoint!(main);
+#![cfg_attr(any(target_arch = "mips", target_arch = "riscv64", target_os = "zkvm"), no_main)]
 
 mod l1;
 mod l2;
@@ -34,7 +33,13 @@ extern crate alloc;
 const ORACLE_LRU_SIZE: usize = 1024;
 
 // TODO: How does this work when we do ZKVM run? Is it compatible with zkvm::entrypoint, or need some cfg stuff?
-// #[client_entry(0x77359400)]
+cfg_if! {
+    if #[cfg(target_os = "zkvm")] {
+        use sp1_zkvm::entrypoint;
+    }
+}
+
+#[cfg_attr(not(target_os = "zkvm"), client_entry(0x77359400))]
 fn main() {
 
     kona_common::block_on(async move {
