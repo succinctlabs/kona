@@ -11,9 +11,9 @@ mod hint;
 
 use l1::{DerivationDriver, OracleBlobProvider, OracleL1ChainProvider};
 use l2::OracleL2ChainProvider;
-use boot::BootInfo;
-use oracle::{Oracle, InMemoryOracle, CachingOracle, HINT_WRITER};
-use hint::HintType;
+pub use boot::{BootInfo, BootInfoWithoutRollupConfig};
+pub use oracle::{Oracle, InMemoryOracle, CachingOracle, HINT_WRITER, ORACLE_READER};
+pub use hint::HintType;
 
 use kona_primitives::L2AttributesWithParent;
 use kona_executor::StatelessL2BlockExecutor;
@@ -24,17 +24,14 @@ use alloy_consensus::Header;
 
 extern crate alloc;
 
-/// The size of the LRU cache in the oracle.
-const ORACLE_LRU_SIZE: usize = 1024;
-
 cfg_if! {
     if #[cfg(target_os = "zkvm")] {
         sp1_zkvm::entrypoint!(main);
         use alloc::vec::Vec;
         use kona_mpt::NoopTrieDBHinter;
-        use boot::BootInfoWithoutRollupConfig;
     } else {
         use l2::TrieDBHintWriter;
+        const ORACLE_LRU_SIZE: usize = 1024;
     }
 }
 
@@ -48,8 +45,6 @@ fn main() {
 
         cfg_if! {
             if #[cfg(target_os = "zkvm")] {
-                #[doc = "Concrete implementation of the [BasicKernelInterface] trait for the `zkvm` target architecture."]
-
                 let boot_info = sp1_zkvm::io::read::<BootInfoWithoutRollupConfig>();
                 sp1_zkvm::io::commit(&boot_info);
                 let boot_info: Arc<BootInfo> = Arc::new(boot_info.into());
