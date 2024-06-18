@@ -6,17 +6,17 @@ use anyhow::Result;
 pub struct ZkvmIO;
 
 impl BasicKernelInterface for ZkvmIO {
-    fn write(fd: FileDescriptor, buf: &[u8]) -> Result<usize> {
+    fn write(_fd: FileDescriptor, _buf: &[u8]) -> Result<usize> {
         // TODO: Implement this function.
         Ok(0)
     }
 
-    fn read(fd: FileDescriptor, buf: &mut [u8]) -> Result<usize> {
+    fn read(_fd: FileDescriptor, _buf: &mut [u8]) -> Result<usize> {
         // TODO: Implement this function.
         Ok(0)
     }
 
-    fn exit(code: usize) -> ! {
+    fn exit(_code: usize) -> ! {
         // TODO: Implement this function.
         panic!()
     }

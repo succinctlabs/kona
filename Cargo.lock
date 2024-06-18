@@ -7028,4 +7028,5 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "zkvm-client",
 ]

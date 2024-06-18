@@ -1,6 +1,6 @@
 //! Contains the concrete implementation of the [BlobProvider] trait for the client program.
 
-use crate::{BootInfo, Oracle, HintType, HINT_WRITER};
+use crate::{Oracle, HintType, HINT_WRITER};
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use alloy_consensus::Blob;
 use alloy_eips::eip4844::FIELD_ELEMENTS_PER_BLOB;

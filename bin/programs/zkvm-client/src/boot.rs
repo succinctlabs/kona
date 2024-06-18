@@ -24,6 +24,7 @@ pub const L2_CLAIM_BLOCK_NUMBER_KEY: U256 = U256::from_be_slice(&[4]);
 pub const L2_CHAIN_ID_KEY: U256 = U256::from_be_slice(&[5]);
 
 /// The local key ident for the L2 rollup config.
+#[allow(dead_code)]
 pub const L2_ROLLUP_CONFIG_KEY: U256 = U256::from_be_slice(&[6]);
 
 /// The boot information for the client program.

@@ -4,4 +4,5 @@ mod chain_provider;
 pub use chain_provider::OracleL2ChainProvider;
 
 mod trie_hinter;
+#[allow(unused_imports)]
 pub use trie_hinter::TrieDBHintWriter;

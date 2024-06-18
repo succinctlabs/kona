@@ -10,8 +10,8 @@ run-client-native l1_rpc_url beacon_rpc_url l2_rpc_url verbosity:
 
   # TODO: These configuration values are currently mocked. Once they're consumed,
   # update this to offer default run or optionally alter by pre-setting them.
-  ROLLUP_CONFIG_PATH="x"
-  L2_GENESIS_PATH="x"
+  ROLLUP_CONFIG_PATH="./config.json"
+  L2_GENESIS_PATH="./genesis.json"
   L1_HEAD=0x175b19156f79039d3fc039921905b303cdcc87b04d1b388ce563bd5a4f6061c7
   L2_HEAD=0x9506905902f5c3613c5441a8697c09e7aafdb64082924d8bd2857f9e34a47a9a
   L2_OUTPUT_ROOT=0xb8a465f44c168c4bffc43fcf933138a26a3410473dd2070052d5ea6cb366ac60
@@ -29,6 +29,8 @@ run-client-native l1_rpc_url beacon_rpc_url l2_rpc_url verbosity:
   cargo build --profile release-client-lto
   echo "Running host program with native client program..."
   (cd ../../.. && cargo r --bin kona-host --release -- \
+    --rollup-config $ROLLUP_CONFIG_PATH \
+    --l2-genesis-path $L2_GENESIS_PATH \
     --network optimism \
     --l1-head $L1_HEAD \
     --l2-head $L2_HEAD \

@@ -20,7 +20,7 @@ use kona_derive::{
     traits::{ChainProvider, L2ChainProvider},
 };
 use kona_mpt::TrieDBFetcher;
-use kona_preimage::{PreimageKey, PreimageKeyType, PreimageOracleClient, HintWriterClient};
+use kona_preimage::{PreimageKey, PreimageKeyType, PreimageOracleClient};
 use kona_primitives::{BlockInfo, L2AttributesWithParent, L2BlockInfo};
 use tracing::{info, warn};
 
@@ -66,11 +66,13 @@ pub struct DerivationDriver {
 
 impl DerivationDriver {
     /// Returns the current L2 safe head [L2BlockInfo].
+    #[allow(dead_code)]
     pub fn l2_safe_head(&self) -> &L2BlockInfo {
         &self.l2_safe_head
     }
 
     /// Returns the [Header] of the current L2 safe head.
+    #[allow(dead_code)]
     pub fn l2_safe_head_header(&self) -> &Sealed<Header> {
         &self.l2_safe_head_header
     }

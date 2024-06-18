@@ -23,7 +23,7 @@ kona-preimage = { path = "../../crates/preimage", version = "0.0.1" }
 kona-mpt = { path = "../../crates/mpt", version = "0.0.1" }
 kona-derive = { path = "../../crates/derive", version = "0.0.1" }
 kona-executor = { path = "../../crates/executor", version = "0.0.1" }
-kona-zkvm-client = { path = "../../bin/program/zkvm-client", version = "0.0.1" }
+zkvm-client = { path = "../../bin/programs/zkvm-client", version = "0.1.0" }
 
 # external
 alloy-provider = { git = "https://github.com/alloy-rs/alloy", rev = "cb95183" }

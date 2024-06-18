@@ -8,7 +8,7 @@ default:
 run-client-native l1_rpc l1_beacon_rpc l2_rpc verbosity:
   #!/usr/bin/env bash
 
-  # TODO: These configuration values are currently mocked. Once they're consumed, 
+  # TODO: These configuration values are currently mocked. Once they're consumed,
   # update this to offer default run or optionally alter by pre-setting them.
   ROLLUP_CONFIG_PATH="x"
   L2_GENESIS_PATH="x"
