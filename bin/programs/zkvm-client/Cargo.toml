@@ -38,6 +38,7 @@ sha256 = "1.5.0"
 
 # sp1
 sp1-zkvm = { git = "https://github.com/succinctlabs/sp1.git", rev = "v1.0.5-testnet"  }
+hex = "0.4.3"
 
 [dev-dependencies]
 

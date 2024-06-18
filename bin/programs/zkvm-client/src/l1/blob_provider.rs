@@ -4,15 +4,16 @@ use crate::InMemoryOracle;
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use alloy_consensus::Blob;
 use alloy_eips::eip4844::FIELD_ELEMENTS_PER_BLOB;
-use alloy_primitives::keccak256;
+use alloy_primitives::{B256, keccak256};
 use async_trait::async_trait;
 use kona_derive::{
     traits::BlobProvider,
     types::{BlobProviderError, IndexedBlobHash},
 };
-
 use kona_preimage::{PreimageKey, PreimageKeyType, PreimageOracleClient};
 use kona_primitives::BlockInfo;
+
+use hex::FromHex;
 
 /// An oracle-backed blob provider.
 #[derive(Debug, Clone)]
@@ -53,7 +54,7 @@ impl OracleBlobProvider {
             .await?;
 
         // ZKVM Constraint: sha256(commitment) = blob_hash.hash
-        assert_eq!(sha256::digest(&commitment), blob_hash.hash, "get_blob - zkvm constraint failed");
+        assert_eq!(<[u8;32]>::from_hex(sha256::digest(&commitment)).unwrap(), blob_hash.hash, "get_blob - zkvm constraint failed");
 
         // Reconstruct the blob from the 4096 field elements.
         let mut blob = Blob::default();
