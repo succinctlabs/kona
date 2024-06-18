@@ -6,30 +6,19 @@ sp1_zkvm::entrypoint!(main);
 use alloy_consensus::{Header, Sealable};
 use alloy_rlp::Decodable;
 use kona_client::l2::StatelessL2BlockExecutor;
-use kona_derive::types::{L2PayloadAttributes, RollupConfig};
-use kona_zkvm::{ZkvmTrieDBFetcher, ZkvmTrieDBHinter};
+use kona_derive::types::{L2PayloadAttributes, OP_MAINNET_CONFIG};
+use kona_zkvm::{ZkvmInMemoryFetcher, ZkvmHinter};
 use std::sync::Arc;
 
 pub fn main() {
-    let rollup_config = RollupConfig {
-        l2_chain_id: 10,
-        regolith_time: Some(0),
-        canyon_time: Some(0),
-        delta_time: Some(0),
-        ecotone_time: Some(0),
-        ..Default::default()
-    };
+    let rollup_config = OP_MAINNET_CONFIG;
     let raw_header = sp1_zkvm::io::read_vec();
     let header = Header::decode(&mut &raw_header[..]).unwrap();
 
     let raw_expected_header = sp1_zkvm::io::read_vec();
     let expected_header = Header::decode(&mut &raw_expected_header[..]).unwrap();
 
-    let fetcher: ZkvmTrieDBFetcher = sp1_zkvm::io::read();
-    println!("Verifying fetcher...");
-    fetcher.verify();
-    println!("Done verifying fetcher.");
-
+    let fetcher: ZkvmInMemoryFetcher = sp1_zkvm::io::read();
     let hinter = ZkvmTrieDBHinter {};
     let payload_attrs: L2PayloadAttributes = sp1_zkvm::io::read();
 
@@ -40,6 +29,10 @@ pub fn main() {
     println!("Executed payload.");
     assert_eq!(produced_header, expected_header);
     println!("Assertion passed.");
+
+    println!("Verifying fetcher...");
+    fetcher.verify();
+    println!("Done verifying fetcher.");
 
     // TODO: assert that the block executor's state is correct.
     // assert_eq!(

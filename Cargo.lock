@@ -3037,6 +3037,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "sha256"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "18278f6a914fa3070aa316493f7d2ddfb9ac86ebc06fa3b83bffda487e9065b0"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "hex",
+ "sha2",
+ "tokio",
+]
+
+[[package]]
 name = "sha3-asm"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3200,20 +3213,6 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
-
-[[package]]
-name = "stf-program"
-version = "0.1.0"
-dependencies = [
- "alloy-consensus 0.1.0",
- "alloy-primitives",
- "alloy-rlp",
- "kona-client",
- "kona-derive",
- "kona-mpt",
- "kona-zkvm",
- "sp1-zkvm",
-]
 
 [[package]]
 name = "strsim"
@@ -4121,6 +4120,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "cfg-if",
+ "hashbrown",
  "kona-common",
  "kona-common-proc",
  "kona-derive",
@@ -4132,6 +4132,8 @@ dependencies = [
  "op-alloy-consensus",
  "serde",
  "serde_json",
+ "sha256",
+ "sp1-zkvm",
  "spin 0.9.8",
  "tracing",
  "tracing-subscriber",

@@ -9,11 +9,11 @@ use std::collections::HashMap;
 
 /// A [TrieDBFetcher] for usage in zkVM programs.
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ZkvmTrieDBFetcher {
+pub struct ZkvmInMemoryFetcher {
     preimages: HashMap<B256, Bytes>,
 }
 
-impl ZkvmTrieDBFetcher {
+impl ZkvmInMemoryFetcher {
     #[cfg(not(target_os = "zkvm"))]
     /// Constructs a new [ZkvmTrieDBFetcher] from a testdata file. Only available in the host
     /// environment.
@@ -33,7 +33,7 @@ impl ZkvmTrieDBFetcher {
     }
 }
 
-impl TrieDBFetcher for ZkvmTrieDBFetcher {
+impl TrieDBFetcher for ZkvmInMemoryFetcher {
     fn trie_node_preimage(&self, key: B256) -> Result<Bytes> {
         self.preimages
             .get(&key)
@@ -60,4 +60,4 @@ impl TrieDBFetcher for ZkvmTrieDBFetcher {
 }
 
 /// A [TrieDBHinter] for usage in zkVM programs.
-pub type ZkvmTrieDBHinter = NoopTrieDBHinter;
+pub type ZkvmHinter = NoopTrieDBHinter;
