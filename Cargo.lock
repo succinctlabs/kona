@@ -6976,6 +6976,7 @@ dependencies = [
  "async-trait",
  "cfg-if",
  "hashbrown 0.14.5",
+ "hex",
  "kona-common",
  "kona-common-proc",
  "kona-derive",

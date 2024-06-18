@@ -12,16 +12,16 @@ fn main() {
 
     // Commit to public values for all data that will be verified on chain.
 
-    let l1_head = b256!("1234123412341234123412341234123412341234123412341234123412341234");
+    let l1_head = b256!("9506905902f5c3613c5441a8697c09e7aafdb64082924d8bd2857f9e34a47a9a");
     stdin.write(&l1_head);
 
-    let l2_output_root = b256!("1234123412341234123412341234123412341234123412341234123412341234");
+    let l2_output_root = b256!("b8a465f44c168c4bffc43fcf933138a26a3410473dd2070052d5ea6cb366ac60");
     stdin.write(&l2_output_root);
 
-    let l2_claim = b256!("1234123412341234123412341234123412341234123412341234123412341234");
+    let l2_claim = b256!("b576409c0640c575de51d78cc0df71914dbd4ae4639c4782bdcbc9f6daf19620");
     stdin.write(&l2_claim);
 
-    let l2_claim_block = 0x1234;
+    let l2_claim_block = 120794432;
     stdin.write(&l2_claim_block);
 
     let chain_id = 10;
