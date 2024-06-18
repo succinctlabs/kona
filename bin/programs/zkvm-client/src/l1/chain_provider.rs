@@ -39,7 +39,7 @@ impl ChainProvider for OracleL1ChainProvider {
         let header_rlp =
             self.oracle.get(PreimageKey::new(*hash, PreimageKeyType::Keccak256)).await?;
 
-        // TODO: Is it worth the optimization to guard these in non zk mode?
+        // Z-TODO: Is it worth the optimization to skip these checks in non zk mode? Probably not.
         // ZKVM Constraint: keccak(header_rlp) = hash
         assert_eq!(keccak256(&header_rlp), hash, "header_by_hash - zkvm constraint failed");
 

@@ -11,9 +11,9 @@ mod hint;
 
 use l1::{DerivationDriver, OracleBlobProvider, OracleL1ChainProvider};
 use l2::OracleL2ChainProvider;
-pub use boot::{BootInfo, BootInfoWithoutRollupConfig};
-pub use oracle::{Oracle, InMemoryOracle, CachingOracle, HINT_WRITER, ORACLE_READER};
-pub use hint::HintType;
+use boot::BootInfo;
+use oracle::{Oracle, HINT_WRITER};
+use hint::HintType;
 
 use kona_primitives::L2AttributesWithParent;
 use kona_executor::StatelessL2BlockExecutor;
@@ -21,14 +21,20 @@ use kona_executor::StatelessL2BlockExecutor;
 use cfg_if::cfg_if;
 use alloc::sync::Arc;
 use alloy_consensus::Header;
+use tracing::trace;
 
 extern crate alloc;
 
 cfg_if! {
+    // If the target OS is zkVM, set everything up to use no hints, read input data
+    // from SP1, and compile to a program that can be run in zkVM.
     if #[cfg(target_os = "zkvm")] {
         sp1_zkvm::entrypoint!(main);
         use alloc::vec::Vec;
         use kona_mpt::NoopTrieDBHinter;
+        use boot::BootInfoWithoutRollupConfig;
+
+    // Otherwise, import the hinter and oracle LRU size to prepare for online mode.
     } else {
         use l2::TrieDBHintWriter;
         const ORACLE_LRU_SIZE: usize = 1024;
@@ -44,6 +50,8 @@ fn main() {
         ////////////////////////////////////////////////////////////////
 
         cfg_if! {
+            // If we are compiling for the zkVM, read inputs from SP1 to generate boot info
+            // and in memory oracle. We can use the no-op hinter, as we shouldn't need hints.
             if #[cfg(target_os = "zkvm")] {
                 let boot_info = sp1_zkvm::io::read::<BootInfoWithoutRollupConfig>();
                 sp1_zkvm::io::commit(&boot_info);
@@ -52,6 +60,9 @@ fn main() {
                 let kv_store_bytes: Vec<u8> = sp1_zkvm::io::read_vec();
                 let oracle = Arc::new(Oracle::new_in_memory(kv_store_bytes));
                 let hinter = NoopTrieDBHinter;
+
+            // If we are compiling for online mode, create a caching oracle that speaks to the
+            // fetcher via hints, and gather boot info from this oracle.
             } else {
                 let oracle = Arc::new(Oracle::new_caching(ORACLE_LRU_SIZE));
                 let boot_info = Arc::new(BootInfo::load(oracle.as_ref()).await.unwrap());

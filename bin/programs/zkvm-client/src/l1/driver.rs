@@ -95,7 +95,7 @@ impl DerivationDriver {
     /// - A new [DerivationDriver] instance.
     pub async fn new(
         boot_info: &BootInfo,
-        caching_oracle: &Oracle,
+        oracle: &Oracle,
         blob_provider: OracleBlobProvider,
         mut chain_provider: OracleL1ChainProvider,
         mut l2_chain_provider: OracleL2ChainProvider,
@@ -104,7 +104,7 @@ impl DerivationDriver {
 
         // Fetch the startup information.
         let (l1_origin, l2_safe_head, l2_safe_head_header) = Self::find_startup_info(
-            caching_oracle,
+            oracle,
             boot_info,
             &mut chain_provider,
             &mut l2_chain_provider,
@@ -154,7 +154,7 @@ impl DerivationDriver {
     /// Finds the startup information for the derivation pipeline.
     ///
     /// ## Takes
-    /// - `caching_oracle`: The caching oracle.
+    /// - `oracle`: The caching oracle.
     /// - `boot_info`: The boot information.
     /// - `chain_provider`: The L1 chain provider.
     /// - `l2_chain_provider`: The L2 chain provider.
@@ -162,7 +162,7 @@ impl DerivationDriver {
     /// ## Returns
     /// - A tuple containing the L1 origin block information and the L2 safe head information.
     async fn find_startup_info(
-        caching_oracle: &Oracle,
+        oracle: &Oracle,
         boot_info: &BootInfo,
         chain_provider: &mut OracleL1ChainProvider,
         l2_chain_provider: &mut OracleL2ChainProvider,
@@ -173,7 +173,7 @@ impl DerivationDriver {
             .await?;
 
         let mut output_preimage = [0u8; 128];
-        caching_oracle
+        oracle
             .get_exact(
                 PreimageKey::new(*boot_info.l2_output_root, PreimageKeyType::Keccak256),
                 &mut output_preimage,

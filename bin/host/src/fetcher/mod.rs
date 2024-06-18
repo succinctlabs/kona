@@ -74,9 +74,6 @@ where
         // Drop the read lock before beginning the retry loop.
         drop(kv_lock);
 
-        trace!(target: "fetcher", "Do we have the preimage?: {:?}", preimage.is_some());
-        trace!(target: "fetcher", "Last hint: {:?}", self.last_hint.as_deref());
-
         // Use a loop to keep retrying the prefetch as long as the key is not found
         while preimage.is_none() && self.last_hint.is_some() {
             let hint = self.last_hint.as_ref().expect("Cannot be None");

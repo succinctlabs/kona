@@ -13,7 +13,8 @@ pub struct InMemoryOracle {
 impl InMemoryOracle {
     pub fn from_raw_bytes(input: Vec<u8>) -> Self {
         Self {
-            // TODO: Use more efficient library for deserialization.
+            // Z-TODO: Use more efficient library for deserialization.
+            // https://github.com/rkyv/rkyv
             cache: serde_json::from_slice(&input).unwrap(),
         }
     }

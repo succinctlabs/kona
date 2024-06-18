@@ -12,11 +12,11 @@ run-client-native l1_rpc_url beacon_rpc_url l2_rpc_url verbosity:
   # update this to offer default run or optionally alter by pre-setting them.
   ROLLUP_CONFIG_PATH="./config.json"
   L2_GENESIS_PATH="./genesis.json"
-  L1_HEAD=0x175b19156f79039d3fc039921905b303cdcc87b04d1b388ce563bd5a4f6061c7
-  L2_HEAD=0x9506905902f5c3613c5441a8697c09e7aafdb64082924d8bd2857f9e34a47a9a
-  L2_OUTPUT_ROOT=0xb8a465f44c168c4bffc43fcf933138a26a3410473dd2070052d5ea6cb366ac60
-  L2_CLAIM=0xb576409c0640c575de51d78cc0df71914dbd4ae4639c4782bdcbc9f6daf19620
-  L2_BLOCK_NUMBER=120794432
+  L1_HEAD=0xbe3e8018cedf5495244956a2fc9e21c24ef8dbf9a2b6f5f258ea52c58186defc
+  L2_HEAD=0xcb3acb544e9683ed77dfc4f58853358489d02f2e5e275e1a55a101d74fcf91e7
+  L2_OUTPUT_ROOT=0xa8bf8e6642a22da7f241ad21c15ad12656c6a2cd0a8aa9765d3436ddf20ee9cb
+  L2_CLAIM=0x69bb5bf356632be020f60117092c37d320ee7d5673d0b1ff6426271adb537ec1
+  L2_BLOCK_NUMBER=121572792
   L2_CHAIN_ID=10
   L1_NODE_ADDRESS={{l1_rpc_url}}
   L1_BEACON_ADDRESS={{beacon_rpc_url}}
@@ -44,3 +44,5 @@ run-client-native l1_rpc_url beacon_rpc_url l2_rpc_url verbosity:
     --data-dir $DATA_DIR \
     --exec $CLIENT_BIN_PATH \
     {{verbosity}})
+
+  echo "Cleaning up..."
