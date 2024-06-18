@@ -1,8 +1,6 @@
 //! A program to verify a Optimism L2 block STF in the zkVM.
 
 #![no_std]
-// #![cfg_attr(any(target_arch = "mips", target_arch = "riscv64", target_os = "zkvm"), no_main)]
-
 #![cfg_attr(target_os = "zkvm", no_main)]
 
 mod l1;
