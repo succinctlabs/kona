@@ -3,7 +3,7 @@
 use crate::{BootInfo, CachingOracle, HintType, HINT_WRITER};
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use alloy_consensus::Header;
-use alloy_primitives::{Bytes, B256};
+use alloy_primitives::{keccak256, Bytes, B256};
 use alloy_rlp::Decodable;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
@@ -119,6 +119,7 @@ impl L2ChainProvider for OracleL2ChainProvider {
 
 impl TrieDBFetcher for OracleL2ChainProvider {
     fn trie_node_preimage(&self, key: B256) -> Result<Bytes> {
+        // TODO (zkVM): keccak256(result) = key
         // On L2, trie node preimages are stored as keccak preimage types in the oracle. We assume
         // that a hint for these preimages has already been sent, prior to this call.
         kona_common::block_on(async move {
@@ -130,6 +131,7 @@ impl TrieDBFetcher for OracleL2ChainProvider {
     }
 
     fn bytecode_by_hash(&self, hash: B256) -> Result<Bytes> {
+        // TODO (zkVM): keccak256(result) = hash
         // Fetch the bytecode preimage from the caching oracle.
         kona_common::block_on(async move {
             HINT_WRITER.write(&HintType::L2Code.encode_with(&[hash.as_ref()])).await?;
@@ -142,6 +144,7 @@ impl TrieDBFetcher for OracleL2ChainProvider {
     }
 
     fn header_by_hash(&self, hash: B256) -> Result<Header> {
+        // TODO (zkVM): keccak256(header_bytes) = hash
         // Fetch the header from the caching oracle.
         kona_common::block_on(async move {
             HINT_WRITER.write(&HintType::L2BlockHeader.encode_with(&[hash.as_ref()])).await?;

@@ -52,6 +52,7 @@ impl OracleBlobProvider {
         self.oracle
             .get_exact(PreimageKey::new(*blob_hash.hash, PreimageKeyType::Sha256), &mut commitment)
             .await?;
+        // TODO (zkVM): sha256(commitment) = blob_hash.hash
 
         // Reconstruct the blob from the 4096 field elements.
         let mut blob = Blob::default();
@@ -61,6 +62,7 @@ impl OracleBlobProvider {
             field_element_key[72..].copy_from_slice(i.to_be_bytes().as_ref());
 
             let mut field_element = [0u8; 32];
+            // TODO: what to do here?
             self.oracle
                 .get_exact(
                     PreimageKey::new(*keccak256(field_element_key), PreimageKeyType::Blob),

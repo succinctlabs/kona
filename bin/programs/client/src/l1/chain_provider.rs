@@ -32,6 +32,8 @@ impl OracleL1ChainProvider {
 #[async_trait]
 impl ChainProvider for OracleL1ChainProvider {
     async fn header_by_hash(&mut self, hash: B256) -> Result<Header> {
+        // TODO (zkVM): keccak256(header_rlp) = hash
+
         // Send a hint for the block header.
         HINT_WRITER.write(&HintType::L1BlockHeader.encode_with(&[hash.as_ref()])).await?;
 
@@ -121,6 +123,7 @@ impl ChainProvider for OracleL1ChainProvider {
 
 impl TrieDBFetcher for OracleL1ChainProvider {
     fn trie_node_preimage(&self, key: B256) -> Result<Bytes> {
+        // TODO (zkVM): keccak256(result) = key
         // On L1, trie node preimages are stored as keccak preimage types in the oracle. We assume
         // that a hint for these preimages has already been sent, prior to this call.
         kona_common::block_on(async move {
