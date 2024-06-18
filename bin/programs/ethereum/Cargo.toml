@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 sp1-zkvm = { git = "https://github.com/succinctlabs/sp1.git", rev = "v1.0.5-testnet"  }
+kona-common-proc = { path = "../../../crates/common-proc", version = "0.0.1" }
 kona-client = { path = "../client", version = "0.1.0" }
 kona-mpt = { path = "../../../crates/mpt", version = "0.0.1" }
 kona-zkvm = { path = "../../../crates/zkvm", version = "0.0.1" }

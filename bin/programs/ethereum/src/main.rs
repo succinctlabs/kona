@@ -1,8 +1,17 @@
 //! A program to verify a Ethereum STF in the zkVM using the Kona DB and the Reth Ethereum block
 //! executor.
+#![doc = include_str!("../README.md")]
+#![warn(missing_debug_implementations, missing_docs, unreachable_pub, rustdoc::all)]
+#![deny(unused_must_use, rust_2018_idioms)]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![no_std]
+#![cfg_attr(any(target_arch = "mips", target_arch = "riscv64"), no_main)]
+
+extern crate alloc;
 
 use alloy_consensus::Sealable;
 use ethereum_program::{InputFetcher, InputFetcherImpl, TrieDBFetcherImpl, TrieDBHinter};
+use kona_common_proc::client_entry;
 use kona_mpt::TrieDB;
 use reth_evm::execute::{BlockExecutorProvider, Executor, ProviderError};
 use reth_evm_ethereum::execute::EthExecutorProvider;
@@ -13,7 +22,8 @@ use revm::{
     Database as RevmDatabase,
 };
 
-pub fn main() {
+#[client_entry(0x77359400)]
+pub fn main() -> Result<()> {
     // TODO: hardcoding the block number for now, in the future we can also fetch this either from a
     // `BootInfo`-like struct or from the zkVM input.
     let block_number: u64 = 123;
@@ -39,6 +49,7 @@ pub fn main() {
     let output = executor.execute((&block_with_senders, total_difficulty).into()).unwrap();
 
     // TODO: given the `output`, compute the new state root and the new header.
+    Ok::<_, anyhow::Error>(())
 }
 
 struct Wrapper<F: kona_mpt::TrieDBFetcher, H: kona_mpt::TrieDBHinter>(TrieDB<F, H>);
