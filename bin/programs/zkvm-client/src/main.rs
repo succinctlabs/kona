@@ -3,24 +3,33 @@
 #![no_std]
 #![cfg_attr(target_os = "zkvm", no_main)]
 
+mod boot;
+mod hint;
 mod l1;
 mod l2;
-mod boot;
 mod oracle;
-mod hint;
 
-use l1::{DerivationDriver, OracleBlobProvider, OracleL1ChainProvider};
-use l2::OracleL2ChainProvider;
-use boot::BootInfo;
-use oracle::{Oracle, HINT_WRITER};
+use core::num::Wrapping;
+
+// use boot::BootInfo;
 use hint::HintType;
+use kona_client::CachingOracle;
+// use l1::DerivationDriver;
+// use l2::OracleL2ChainProvider;
+// use oracle::{Oracle, HINT_WRITER};
+use oracle::InMemoryOracle;
 
-use kona_primitives::L2AttributesWithParent;
 use kona_executor::StatelessL2BlockExecutor;
+use kona_primitives::L2AttributesWithParent;
 
-use cfg_if::cfg_if;
 use alloc::sync::Arc;
 use alloy_consensus::Header;
+use cfg_if::cfg_if;
+use kona_client::{
+    l1::{DerivationDriver, OracleBlobProvider, OracleL1ChainProvider},
+    l2::{OracleL2ChainProvider, TrieDBHintWriter},
+    BootInfo,
+};
 use tracing::trace;
 
 extern crate alloc;
@@ -36,15 +45,12 @@ cfg_if! {
 
     // Otherwise, import the hinter and oracle LRU size to prepare for online mode.
     } else {
-        use l2::TrieDBHintWriter;
         const ORACLE_LRU_SIZE: usize = 1024;
     }
 }
 
 fn main() {
-
     kona_common::block_on(async move {
-
         ////////////////////////////////////////////////////////////////
         //                          PROLOGUE                          //
         ////////////////////////////////////////////////////////////////
@@ -58,13 +64,13 @@ fn main() {
                 let boot_info: Arc<BootInfo> = Arc::new(boot_info.into());
 
                 let kv_store_bytes: Vec<u8> = sp1_zkvm::io::read_vec();
-                let oracle = Arc::new(Oracle::new_in_memory(kv_store_bytes));
+                let oracle = Arc::new(InMemoryOracle::from_raw_bytes(kv_store_bytes));
                 let hinter = NoopTrieDBHinter;
 
             // If we are compiling for online mode, create a caching oracle that speaks to the
             // fetcher via hints, and gather boot info from this oracle.
             } else {
-                let oracle = Arc::new(Oracle::new_caching(ORACLE_LRU_SIZE));
+                let oracle = Arc::new(CachingOracle::new(ORACLE_LRU_SIZE));
                 let boot_info = Arc::new(BootInfo::load(oracle.as_ref()).await.unwrap());
                 let hinter = TrieDBHintWriter;
             }
@@ -74,6 +80,13 @@ fn main() {
         let l2_provider = OracleL2ChainProvider::new(boot_info.clone(), oracle.clone());
         let beacon = OracleBlobProvider::new(oracle.clone());
 
+        cfg_if! {
+        if #[cfg(target_os = "zkvm")] {
+                let l1_provider = WrappingOracleL1ChainProvider::new(l1_provider);
+                let l2_provider = WrappingOracleL2ChainProvider::new(l2_provider);
+                let beacon = WrappingOracleBlobProvider::new(beacon);
+            }
+        }
         ////////////////////////////////////////////////////////////////
         //                   DERIVATION & EXECUTION                   //
         ////////////////////////////////////////////////////////////////
@@ -88,7 +101,8 @@ fn main() {
         .await
         .unwrap();
 
-        let L2AttributesWithParent { attributes, .. } = driver.produce_disputed_payload().await.unwrap();
+        let L2AttributesWithParent { attributes, .. } =
+            driver.produce_disputed_payload().await.unwrap();
 
         let mut executor = StatelessL2BlockExecutor::new(
             &boot_info.rollup_config,

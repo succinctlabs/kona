@@ -29,7 +29,7 @@ kona-primitives = { path = "../../../crates/primitives", version = "0.0.1" }
 kona-mpt = { path = "../../../crates/mpt", version = "0.0.1" }
 kona-derive = { path = "../../../crates/derive", default-features = false, version = "0.0.1" }
 kona-executor = { path = "../../../crates/executor", version = "0.0.1" }
-
+kona-client = { path = "../client", version = "0.1.0" }
 tracing-subscriber = { version = "0.3.18", optional = true }
 hashbrown = "0.14.5"
 serde = { version = "1.0.197", features = ["derive"] }

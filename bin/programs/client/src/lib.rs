@@ -14,7 +14,7 @@ pub mod hint;
 pub use hint::HintType;
 
 mod comms;
-pub use comms::{CachingOracle, HINT_WRITER, ORACLE_READER};
+pub use comms::{CachingOracle, HINT_WRITER};
 
 mod boot;
 pub use boot::{
