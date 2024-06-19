@@ -7,17 +7,15 @@ pub struct ZkvmIO;
 
 impl BasicKernelInterface for ZkvmIO {
     fn write(_fd: FileDescriptor, _buf: &[u8]) -> Result<usize> {
-        // TODO: Implement this function.
-        Ok(0)
+        unimplemented!();
     }
 
+
     fn read(_fd: FileDescriptor, _buf: &mut [u8]) -> Result<usize> {
-        // TODO: Implement this function.
-        Ok(0)
+        unimplemented!();
     }
 
     fn exit(_code: usize) -> ! {
-        // TODO: Implement this function.
-        panic!()
+        unimplemented!();
     }
 }

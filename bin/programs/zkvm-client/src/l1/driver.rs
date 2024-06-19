@@ -111,6 +111,7 @@ impl DerivationDriver {
         )
         .await?;
 
+
         // Construct the pipeline.
         let attributes = StatefulAttributesBuilder::new(
             cfg.clone(),
@@ -126,6 +127,7 @@ impl DerivationDriver {
             .builder(attributes)
             .origin(l1_origin)
             .build();
+
 
         Ok(Self { l2_safe_head, l2_safe_head_header, pipeline })
     }
@@ -146,6 +148,7 @@ impl DerivationDriver {
             }
 
             attributes = self.pipeline.next_attributes();
+            println!("{:?}", attributes);
         }
 
         Ok(attributes.expect("Must be some"))

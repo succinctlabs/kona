@@ -26,7 +26,7 @@ fn main() {
 
     // Commit to public values for all data that will be verified on chain.
 
-    let l1_head = b256!("256a8e01d99248312675f74f867397494dfc5ce7f3d1d98cfdb4d6d841493fae");
+    let l1_head = b256!("ba1f96c4ad1c66d86e6390c22f4cc759429255dfa410d7ec57cdd5560547bb2e");
     let l2_output_root = b256!("a8bf8e6642a22da7f241ad21c15ad12656c6a2cd0a8aa9765d3436ddf20ee9cb");
     let l2_claim = b256!("69bb5bf356632be020f60117092c37d320ee7d5673d0b1ff6426271adb537ec1");
     let l2_claim_block = 121572792;
@@ -49,6 +49,8 @@ fn main() {
     // First instantiate a mock prover client to just execute the program and get the estimation of
     // cycle count.
     let client = ProverClient::mock();
+
+    println!("Here we go...");
 
     let (mut public_values, report) = client.execute(ELF, stdin).unwrap();
     println!("Report: {}", report);

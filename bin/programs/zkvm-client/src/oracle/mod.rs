@@ -6,6 +6,9 @@ use async_trait::async_trait;
 use alloc::{boxed::Box, vec::Vec};
 use anyhow::Result;
 
+mod noop_hint_writer;
+pub use noop_hint_writer::NoopHintWriter;
+
 mod mem_oracle;
 pub use mem_oracle::InMemoryOracle;
 
@@ -24,7 +27,8 @@ static HINT_WRITER_PIPE: PipeHandle =
 pub static ORACLE_READER: OracleReader = OracleReader::new(ORACLE_READER_PIPE);
 
 /// The global hint writer.
-pub static HINT_WRITER: HintWriter = HintWriter::new(HINT_WRITER_PIPE);
+// pub static HINT_WRITER: HintWriter = HintWriter::new(HINT_WRITER_PIPE);
+pub static HINT_WRITER: NoopHintWriter = NoopHintWriter {};
 
 #[derive(Debug, Clone)]
 pub enum Oracle {

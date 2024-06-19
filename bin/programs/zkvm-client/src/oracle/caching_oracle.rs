@@ -11,7 +11,6 @@ use core::num::NonZeroUsize;
 use kona_preimage::{PreimageKey, PreimageOracleClient};
 use lru::LruCache;
 use spin::Mutex;
-use tracing::trace;
 
 /// A wrapper around an [OracleReader] that stores a configurable number of responses in an
 /// [LruCache] for quick retrieval.

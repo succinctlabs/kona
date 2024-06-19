@@ -12,7 +12,7 @@ run-client-native l1_rpc_url beacon_rpc_url l2_rpc_url verbosity:
   # update this to offer default run or optionally alter by pre-setting them.
   ROLLUP_CONFIG_PATH="./config.json"
   L2_GENESIS_PATH="./genesis.json"
-  L1_HEAD=0x256a8e01d99248312675f74f867397494dfc5ce7f3d1d98cfdb4d6d841493fae
+  L1_HEAD=0xba1f96c4ad1c66d86e6390c22f4cc759429255dfa410d7ec57cdd5560547bb2e
   L2_HEAD=0xcb3acb544e9683ed77dfc4f58853358489d02f2e5e275e1a55a101d74fcf91e7
   L2_OUTPUT_ROOT=0xa8bf8e6642a22da7f241ad21c15ad12656c6a2cd0a8aa9765d3436ddf20ee9cb
   L2_CLAIM=0x69bb5bf356632be020f60117092c37d320ee7d5673d0b1ff6426271adb537ec1
