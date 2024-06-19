@@ -5,6 +5,7 @@ use kona_preimage::{HintWriter, OracleReader, PipeHandle, PreimageOracleClient, 
 use async_trait::async_trait;
 use alloc::{boxed::Box, vec::Vec};
 use anyhow::Result;
+use cfg_if::cfg_if;
 
 mod noop_hint_writer;
 pub use noop_hint_writer::NoopHintWriter;
@@ -26,9 +27,16 @@ static HINT_WRITER_PIPE: PipeHandle =
 /// The global preimage oracle reader.
 pub static ORACLE_READER: OracleReader = OracleReader::new(ORACLE_READER_PIPE);
 
-/// The global hint writer.
-// pub static HINT_WRITER: HintWriter = HintWriter::new(HINT_WRITER_PIPE);
-pub static HINT_WRITER: NoopHintWriter = NoopHintWriter {};
+cfg_if! {
+    if #[cfg(target_os = "zkvm")] {
+        /// The global hint writer when in zkVM mode (no op).
+        pub static HINT_WRITER: NoopHintWriter = NoopHintWriter {};
+    } else {
+        /// The global hint writer.
+        pub static HINT_WRITER: HintWriter = HintWriter::new(HINT_WRITER_PIPE);
+    }
+}
+
 
 #[derive(Debug, Clone)]
 pub enum Oracle {

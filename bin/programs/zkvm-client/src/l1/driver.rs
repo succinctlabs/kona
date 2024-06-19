@@ -148,7 +148,6 @@ impl DerivationDriver {
             }
 
             attributes = self.pipeline.next_attributes();
-            println!("{:?}", attributes);
         }
 
         Ok(attributes.expect("Must be some"))

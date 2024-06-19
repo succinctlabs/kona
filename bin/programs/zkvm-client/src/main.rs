@@ -1,6 +1,6 @@
 //! A program to verify a Optimism L2 block STF in the zkVM.
 
-// #![no_std]
+#![no_std]
 #![cfg_attr(target_os = "zkvm", no_main)]
 
 mod l1;
@@ -72,8 +72,6 @@ fn main() {
         let l2_provider = OracleL2ChainProvider::new(boot_info.clone(), oracle.clone());
         let beacon = OracleBlobProvider::new(oracle.clone());
 
-        println!("1");
-
         ////////////////////////////////////////////////////////////////
         //                   DERIVATION & EXECUTION                   //
         ////////////////////////////////////////////////////////////////
@@ -89,11 +87,7 @@ fn main() {
         .await
         .unwrap();
 
-        println!("2");
-
         let L2AttributesWithParent { attributes, .. } = driver.produce_disputed_payload().await.unwrap();
-
-        println!("3");
 
         let mut executor = StatelessL2BlockExecutor::new(
             &boot_info.rollup_config,
@@ -101,22 +95,15 @@ fn main() {
             l2_provider,
             hinter,
         );
-        println!("4");
 
         let Header { number, .. } = *executor.execute_payload(attributes).unwrap();
-
-        println!("5");
         let output_root = executor.compute_output_root().unwrap();
-        println!("6");
 
         ////////////////////////////////////////////////////////////////
         //                          EPILOGUE                          //
         ////////////////////////////////////////////////////////////////
 
         assert_eq!(number, boot_info.l2_claim_block);
-
-        println!("7");
         assert_eq!(output_root, boot_info.l2_claim);
-        println!("8");
     });
 }

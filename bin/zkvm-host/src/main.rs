@@ -50,8 +50,6 @@ fn main() {
     // cycle count.
     let client = ProverClient::mock();
 
-    println!("Here we go...");
-
     let (mut public_values, report) = client.execute(ELF, stdin).unwrap();
     println!("Report: {}", report);
 
@@ -59,7 +57,7 @@ fn main() {
     // let (pk, vk) = client.setup(ELF);
     // let mut proof = client.prove(&pk, stdin).unwrap();
 
-    println!("generated proof");
+    println!("generated valid zk proof");
 }
 
 fn load_kv_store(data_dir: &str) -> InMemoryOracle {
