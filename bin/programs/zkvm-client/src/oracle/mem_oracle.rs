@@ -15,7 +15,7 @@ impl InMemoryOracle {
         Self {
             // Z-TODO: Use more efficient library for deserialization.
             // https://github.com/rkyv/rkyv
-            cache: serde_json::from_slice(&input).unwrap(),
+            cache: bincode::deserialize(&input).unwrap(),
         }
     }
 }

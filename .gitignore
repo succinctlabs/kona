@@ -3,3 +3,6 @@
 
 # Rust target
 target/
+
+# kv store
+data
