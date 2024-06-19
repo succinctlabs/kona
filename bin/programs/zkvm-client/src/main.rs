@@ -21,7 +21,6 @@ use kona_executor::StatelessL2BlockExecutor;
 use cfg_if::cfg_if;
 use alloc::sync::Arc;
 use alloy_consensus::Header;
-use tracing::trace;
 
 extern crate alloc;
 

@@ -26,7 +26,7 @@ fn main() {
 
     // Commit to public values for all data that will be verified on chain.
 
-    let l1_head = b256!("be3e8018cedf5495244956a2fc9e21c24ef8dbf9a2b6f5f258ea52c58186defc");
+    let l1_head = b256!("256a8e01d99248312675f74f867397494dfc5ce7f3d1d98cfdb4d6d841493fae");
     let l2_output_root = b256!("a8bf8e6642a22da7f241ad21c15ad12656c6a2cd0a8aa9765d3436ddf20ee9cb");
     let l2_claim = b256!("69bb5bf356632be020f60117092c37d320ee7d5673d0b1ff6426271adb537ec1");
     let l2_claim_block = 121572792;
