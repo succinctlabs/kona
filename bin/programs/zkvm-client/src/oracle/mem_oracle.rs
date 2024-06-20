@@ -2,8 +2,6 @@ use alloc::{boxed::Box, vec::Vec};
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use kona_preimage::{PreimageKey, PreimageOracleClient};
-// use hashbrown::HashMap;
-// use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 use rkyv::{Archive, Serialize, Deserialize, Infallible};
 
