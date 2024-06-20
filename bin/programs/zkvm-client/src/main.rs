@@ -1,6 +1,6 @@
 //! A program to verify a Optimism L2 block STF in the zkVM.
 
-#![no_std]
+// #![no_std]
 #![cfg_attr(target_os = "zkvm", no_main)]
 
 mod l1;

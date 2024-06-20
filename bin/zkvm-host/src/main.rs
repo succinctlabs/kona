@@ -5,10 +5,10 @@ use sp1_sdk::{utils, ProverClient, SP1Stdin};
 use zkvm_client::BootInfoWithoutRollupConfig;
 use serde::{Serialize, Deserialize};
 use kona_preimage::PreimageKey;
-use hashbrown::HashMap;
 use std::{
     fs,
-    io::Read
+    io::Read,
+    collections::HashMap
 };
 use hex;
 
