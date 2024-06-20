@@ -1,5 +1,5 @@
 #!/bin/bash
 
-pushd ../programs/sp1
+pushd ../programs/zkvm-client
 cargo prove build --ignore-rust-version
 popd

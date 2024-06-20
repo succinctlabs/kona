@@ -47,3 +47,6 @@ inherits = "release"
 panic = "abort"
 codegen-units = 1
 lto = "fat"
+
+[patch.crates-io]
+tiny-keccak = { git = "https://github.com/sp1-patches/tiny-keccak", branch = "patch-v2.0.2" }

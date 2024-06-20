@@ -66,6 +66,7 @@ where
     pub async fn get_preimage(&self, key: B256) -> Result<Vec<u8>> {
         trace!(target: "fetcher", "Pre-image requested. Key: {key}");
 
+
         // Acquire a read lock on the key-value store.
         let kv_lock = self.kv_store.read().await;
         let mut preimage = kv_lock.get(key);
