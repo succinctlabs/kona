@@ -3,7 +3,10 @@
 use alloy_primitives::b256;
 use sp1_sdk::{utils, ProverClient, SP1Stdin};
 use zkvm_client::BootInfoWithoutRollupConfig;
-use serde::{Serialize, Deserialize};
+use rkyv::{
+    ser::{serializers::*, Serializer},
+    AlignedVec, Archive, Deserialize, Serialize
+};
 use kona_preimage::PreimageKey;
 use std::{
     fs,
@@ -15,7 +18,8 @@ use hex;
 const ELF: &[u8] = include_bytes!("../../../elf/riscv32im-succinct-zkvm-elf");
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Archive, Serialize, Deserialize)]
+#[archive_attr(derive(Debug))]
 pub struct InMemoryOracle {
     cache: HashMap<PreimageKey, Vec<u8>>,
 }
@@ -43,7 +47,16 @@ fn main() {
 
     // Read KV store into raw bytes and pass to stdin.
     let kv_store = load_kv_store("../../data");
-    let kv_store_bytes = bincode::serialize(&kv_store).unwrap();
+
+    let mut serializer = CompositeSerializer::new(
+        AlignedSerializer::new(AlignedVec::new()),
+        HeapScratch::<8388608>::new(),
+        SharedSerializeMap::new(),
+    );
+    serializer.serialize_value(&kv_store).unwrap();
+
+    let buffer = serializer.into_serializer().into_inner();
+    let kv_store_bytes = buffer.into_vec();
     stdin.write_slice(&kv_store_bytes);
 
     // First instantiate a mock prover client to just execute the program and get the estimation of
@@ -60,7 +73,7 @@ fn main() {
     println!("generated valid zk proof");
 }
 
-fn load_kv_store(data_dir: &str) -> InMemoryOracle {
+fn load_kv_store(data_dir: &str) -> HashMap<PreimageKey, Vec<u8>> {
     let mut cache = HashMap::new();
 
     // Iterate over the files in the 'data' directory
@@ -89,5 +102,5 @@ fn load_kv_store(data_dir: &str) -> InMemoryOracle {
         }
     }
 
-    InMemoryOracle { cache }
+    cache
 }

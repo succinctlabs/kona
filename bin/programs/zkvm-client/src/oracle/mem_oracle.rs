@@ -5,7 +5,7 @@ use kona_preimage::{PreimageKey, PreimageOracleClient};
 // use hashbrown::HashMap;
 // use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
-use rkyv::{Archive, Serialize, Deserialize};
+use rkyv::{Archive, Serialize, Deserialize, Infallible};
 
 #[derive(Debug, Clone, Archive, Serialize, Deserialize)]
 pub struct InMemoryOracle {
@@ -14,10 +14,11 @@ pub struct InMemoryOracle {
 
 impl InMemoryOracle {
     pub fn from_raw_bytes(input: Vec<u8>) -> Self {
+        let archived = unsafe { rkyv::archived_root::<HashMap<PreimageKey, Vec<u8>>>(&input) };
+        let deserialized: HashMap<PreimageKey, Vec<u8>> = archived.deserialize(&mut Infallible).unwrap();
+
         Self {
-            // Z-TODO: Use more efficient library for deserialization.
-            // https://github.com/rkyv/rkyv
-            cache: bincode::deserialize(&input).unwrap(),
+            cache: deserialized,
         }
     }
 }

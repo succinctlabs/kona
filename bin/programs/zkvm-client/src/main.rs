@@ -67,6 +67,7 @@ fn main() {
                 let hinter = TrieDBHintWriter;
             }
         }
+        println!("done serializing");
 
         let l1_provider = OracleL1ChainProvider::new(boot_info.clone(), oracle.clone());
         let l2_provider = OracleL2ChainProvider::new(boot_info.clone(), oracle.clone());
