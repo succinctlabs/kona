@@ -25,6 +25,7 @@ serde_json = { version = "1.0.117", default-features = false }
 
 # Ethereum
 alloy-primitives = { version = "0.7.6", default-features = false }
+# alloy-primitives = { git = "https://github.com/zobront/alloy-core", version = "0.7.6", default-features = false }
 alloy-rlp = { version = "0.3.5", default-features = false }
 alloy-consensus = { git = "https://github.com/alloy-rs/alloy", rev = "cb95183", default-features = false }
 op-alloy-consensus = { git = "https://github.com/alloy-rs/op-alloy", branch = "refcell/re-exports", default-features = false }
@@ -47,3 +48,6 @@ inherits = "release"
 panic = "abort"
 codegen-units = 1
 lto = "fat"
+
+[patch.crates-io]
+tiny-keccak = { git = "https://github.com/sp1-patches/tiny-keccak", branch = "patch-v2.0.2" }
