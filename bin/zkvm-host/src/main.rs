@@ -50,6 +50,8 @@ fn main() {
 
     let mut serializer = CompositeSerializer::new(
         AlignedSerializer::new(AlignedVec::new()),
+        // TODO: This value is hardcoded to minimum for this block.
+        // Figure out how to compute it so it works on all blocks.
         HeapScratch::<8388608>::new(),
         SharedSerializeMap::new(),
     );
