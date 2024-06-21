@@ -1,6 +1,6 @@
 // A host program to generate a proof of an Optimism L2 block STF in the zkVM.
 
-use alloy_primitives::{b256, Bytes};
+use alloy_primitives::b256;
 use sp1_sdk::{utils, ProverClient, SP1Stdin};
 use zkvm_client::BootInfoWithoutRollupConfig;
 use zkvm_common::BytesHasherBuilder;
@@ -113,16 +113,3 @@ fn get_file_count(data_dir: &str) -> usize {
     }
     file_count
 }
-
-// fn main() {
-//     let mut map: HashMap<[u8; 32], u64, BytesHasherBuilder> = HashMap::with_hasher(BytesHasherBuilder);
-
-//     let key1: [u8; 32] = [1; 32];
-//     let key2: [u8; 32] = [2; 32];
-
-//     map.insert(key1, 10);
-//     map.insert(key2, 20);
-
-//     println!("{:?}", map.get(&key1));
-//     println!("{:?}", map.get(&key2));
-// }
