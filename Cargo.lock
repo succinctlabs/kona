@@ -7107,6 +7107,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "zkvm-common"
+version = "0.1.0"
+
+[[package]]
 name = "zkvm-host"
 version = "0.1.0"
 dependencies = [
@@ -7139,4 +7143,5 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "zkvm-client",
+ "zkvm-common",
 ]
