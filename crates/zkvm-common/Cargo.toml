@@ -1,0 +1,16 @@
+[package]
+name = "zkvm-common"
+version = "0.0.1"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+exclude.workspace = true
+
+[dependencies]
+# workspace
+alloy-primitives.workspace = true
+
+# external
+rkyv = { version = "0.7.44", optional = true }

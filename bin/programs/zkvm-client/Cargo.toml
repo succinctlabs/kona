@@ -29,6 +29,7 @@ kona-primitives = { path = "../../../crates/primitives", version = "0.0.1" }
 kona-mpt = { path = "../../../crates/mpt", version = "0.0.1" }
 kona-derive = { path = "../../../crates/derive", default-features = false, version = "0.0.1" }
 kona-executor = { path = "../../../crates/executor", version = "0.0.1" }
+zkvm-common = { path = "../../../crates/zkvm-common", version = "0.0.1" }
 
 # external
 sha256 = "1.5.0"
