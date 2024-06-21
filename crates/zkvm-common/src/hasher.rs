@@ -5,19 +5,21 @@ pub struct BytesHasher {
 }
 
 impl Hasher for BytesHasher {
+    // Takes the first 8 bytes of the PreimageKey (which includes the type)
+    // and then converts them in little-endian order to a u64.
     fn write(&mut self, bytes: &[u8]) {
-        // Assuming the bytes are exactly 32 bytes, interpret the first 8 bytes as a u64
-        println!("bytes: {:?}", bytes);
-        self.hash = u64::from_ne_bytes(bytes[0..8].try_into().unwrap());
-        println!("hash: {:?}", self.hash);
+        // Note: write() will be called with the length first, but this check will skip it.
+        if bytes.len() == 32 {
+            self.hash = u64::from_be_bytes(bytes[0..8].try_into().unwrap());
+        }
     }
 
     fn finish(&self) -> u64 {
-        println!("finish: {:?}", self.hash);
         self.hash
     }
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct BytesHasherBuilder;
 
 impl BuildHasher for BytesHasherBuilder {

@@ -8,7 +8,6 @@ use rkyv::{
     ser::{serializers::*, Serializer},
     AlignedVec, Archive, Deserialize, Serialize
 };
-use kona_preimage::PreimageKey;
 use std::{
     fs,
     io::Read,
@@ -22,7 +21,7 @@ const ELF: &[u8] = include_bytes!("../../../elf/riscv32im-succinct-zkvm-elf");
 #[derive(Debug, Clone, Archive, Serialize, Deserialize)]
 #[archive_attr(derive(Debug))]
 pub struct InMemoryOracle {
-    cache: HashMap<PreimageKey, Vec<u8>>,
+    cache: HashMap<[u8;32], Vec<u8>, BytesHasherBuilder>,
 }
 
 fn main() {
@@ -49,23 +48,23 @@ fn main() {
     // Read KV store into raw bytes and pass to stdin.
     let kv_store = load_kv_store("../../data");
 
-    // let mut serializer = CompositeSerializer::new(
-    //     AlignedSerializer::new(AlignedVec::new()),
-    //     HeapScratch::<8388608>::new(),
-    //     SharedSerializeMap::new(),
-    // );
-    // serializer.serialize_value(&kv_store).unwrap();
+    let mut serializer = CompositeSerializer::new(
+        AlignedSerializer::new(AlignedVec::new()),
+        HeapScratch::<8388608>::new(),
+        SharedSerializeMap::new(),
+    );
+    serializer.serialize_value(&kv_store).unwrap();
 
-    // let buffer = serializer.into_serializer().into_inner();
-    // let kv_store_bytes = buffer.into_vec();
-    // stdin.write_slice(&kv_store_bytes);
+    let buffer = serializer.into_serializer().into_inner();
+    let kv_store_bytes = buffer.into_vec();
+    stdin.write_slice(&kv_store_bytes);
 
-    // // First instantiate a mock prover client to just execute the program and get the estimation of
-    // // cycle count.
-    // let client = ProverClient::mock();
+    // First instantiate a mock prover client to just execute the program and get the estimation of
+    // cycle count.
+    let client = ProverClient::mock();
 
-    // let (mut public_values, report) = client.execute(ELF, stdin).unwrap();
-    // println!("Report: {}", report);
+    let (mut public_values, report) = client.execute(ELF, stdin).unwrap();
+    println!("Report: {}", report);
 
     // Then generate the real proof.
     // let (pk, vk) = client.setup(ELF);
@@ -88,20 +87,14 @@ fn load_kv_store(data_dir: &str) -> HashMap<[u8;32], Vec<u8>, BytesHasherBuilder
                 let file_name = path.file_stem().unwrap().to_str().unwrap();
 
                 // Convert the file name to PreimageKey
-                if let Ok(key_bytes) = hex::decode(file_name) {
-                    if let Ok(key_array) = TryInto::<[u8;32]>::try_into(key_bytes.as_slice()) {
-                        // if let Ok(key) = PreimageKey::try_from(key_array) {
-                            // Read the file contents
-                            let mut file = fs::File::open(path).expect("Failed to open file");
-                            let mut contents = Vec::new();
-                            file.read_to_end(&mut contents).expect("Failed to read file");
+                if let Ok(key) = hex::decode(file_name) {
+                    // Read the file contents
+                    let mut file = fs::File::open(path).expect("Failed to open file");
+                    let mut contents = Vec::new();
+                    file.read_to_end(&mut contents).expect("Failed to read file");
 
-                            // Insert the key-value pair into the cache
-                            println!("key: {:?}", key_array);
-                            cache.insert(key_array, contents);
-                            break;
-                        // }
-                    }
+                    // Insert the key-value pair into the cache
+                    cache.insert(key.try_into().unwrap(), contents);
                 }
             }
         }

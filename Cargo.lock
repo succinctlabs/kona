@@ -7104,11 +7104,16 @@ dependencies = [
  "spin 0.9.8",
  "tracing",
  "tracing-subscriber",
+ "zkvm-common",
 ]
 
 [[package]]
 name = "zkvm-common"
-version = "0.1.0"
+version = "0.0.1"
+dependencies = [
+ "alloy-primitives",
+ "rkyv",
+]
 
 [[package]]
 name = "zkvm-host"

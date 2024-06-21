@@ -4,16 +4,17 @@ use async_trait::async_trait;
 use kona_preimage::{PreimageKey, PreimageOracleClient};
 use std::collections::HashMap;
 use rkyv::{Archive, Serialize, Deserialize, Infallible};
+use zkvm_common::BytesHasherBuilder;
 
 #[derive(Debug, Clone, Archive, Serialize, Deserialize)]
 pub struct InMemoryOracle {
-    cache: HashMap<PreimageKey, Vec<u8>>,
+    cache: HashMap<[u8;32], Vec<u8>, BytesHasherBuilder>,
 }
 
 impl InMemoryOracle {
     pub fn from_raw_bytes(input: Vec<u8>) -> Self {
-        let archived = unsafe { rkyv::archived_root::<HashMap<PreimageKey, Vec<u8>>>(&input) };
-        let deserialized: HashMap<PreimageKey, Vec<u8>> = archived.deserialize(&mut Infallible).unwrap();
+        let archived = unsafe { rkyv::archived_root::<HashMap<[u8;32], Vec<u8>, BytesHasherBuilder>>(&input) };
+        let deserialized: HashMap<[u8;32], Vec<u8>, BytesHasherBuilder> = archived.deserialize(&mut Infallible).unwrap();
 
         Self {
             cache: deserialized,
@@ -24,11 +25,13 @@ impl InMemoryOracle {
 #[async_trait]
 impl PreimageOracleClient for InMemoryOracle {
     async fn get(&self, key: PreimageKey) -> Result<Vec<u8>> {
-        self.cache.get(&key).cloned().ok_or_else(|| anyhow!("Key not found in cache"))
+        let lookup_key: [u8; 32] = key.into();
+        self.cache.get(&lookup_key).cloned().ok_or_else(|| anyhow!("Key not found in cache"))
     }
 
     async fn get_exact(&self, key: PreimageKey, buf: &mut [u8]) -> Result<()> {
-        let value = self.cache.get(&key).ok_or_else(|| anyhow!("Key not found in cache"))?;
+        let lookup_key: [u8; 32] = key.into();
+        let value = self.cache.get(&lookup_key).ok_or_else(|| anyhow!("Key not found in cache"))?;
         buf.copy_from_slice(value.as_slice());
         Ok(())
     }
