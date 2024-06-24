@@ -55,7 +55,7 @@ fn main() {
                 let boot_info: Arc<BootInfo> = Arc::new(boot_info.into());
 
                 let kv_store_bytes: Vec<u8> = sp1_zkvm::io::read_vec();
-                let oracle = Arc::new(InMemoryOracle::from_raw_bytes(kv_store_bytes));
+                let oracle = Arc::new(CachingOracle::new(ORACLE_LRU_SIZE));
                 let hinter = NoopTrieDBHinter;
 
                 oracle.verify().expect("key value verification failed");
