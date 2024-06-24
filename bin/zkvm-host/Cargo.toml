@@ -17,12 +17,14 @@ alloy-eips.workspace = true
 alloy-consensus.workspace = true
 
 # local
-kona-client = { path = "../programs/client", version = "0.1.0" }
-kona-common = { path = "../../crates/common", version = "0.0.1" }
-kona-preimage = { path = "../../crates/preimage", version = "0.0.1" }
-kona-mpt = { path = "../../crates/mpt", version = "0.0.1" }
-kona-derive = { path = "../../crates/derive", version = "0.0.1" }
-kona-executor = { path = "../../crates/executor", version = "0.0.1" }
+kona-common = { git = "https://github.com/moongate-forks/kona/", branch = "kona-upstream" }
+kona-preimage = { git = "https://github.com/moongate-forks/kona/", branch = "kona-upstream", features = ["rkyv"] }
+kona-primitives = { git = "https://github.com/moongate-forks/kona/", branch = "kona-upstream" }
+kona-mpt = { git = "https://github.com/moongate-forks/kona/", branch = "kona-upstream" }
+kona-derive = { git = "https://github.com/moongate-forks/kona/", branch = "kona-upstream", default-features = false }
+kona-executor = { git = "https://github.com/moongate-forks/kona/", branch = "kona-upstream" }
+kona-client = {  git = "https://github.com/moongate-forks/kona/", branch = "kona-upstream" }
+
 zkvm-client = { path = "../../bin/programs/zkvm-client", version = "0.1.0" }
 
 # external
