@@ -45,3 +45,5 @@ hex = "0.4.3"
 
 [features]
 tracing-subscriber = ["dep:tracing-subscriber"]
+
+# if we pull this crate out from kona, don't forget to add the tiny-keccak patch here
