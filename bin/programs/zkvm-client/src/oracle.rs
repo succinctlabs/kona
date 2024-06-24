@@ -1,5 +1,7 @@
 //! Contains the host <-> client communication utilities.
 
+use super::Precompile;
+
 use kona_common::FileDescriptor;
 use kona_preimage::{HintWriter, OracleReader, PipeHandle};
 use cfg_if::cfg_if;
@@ -9,7 +11,7 @@ use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use hashbrown::HashMap;
 use kona_preimage::{HintWriterClient, PreimageKey, PreimageKeyType, PreimageOracleClient};
-use alloy_primitives::keccak256;
+use alloy_primitives::{keccak256, Address, address};
 use sha2::{Digest, Sha256};
 use serde::{Deserialize, Serialize};
 
@@ -94,7 +96,14 @@ impl InMemoryOracle {
                     todo!();
                 },
                 PreimageKeyType::Precompile => {
-                    todo!();
+                    let hint_data_key = PreimageKey::new(*key.into(), PreimageKeyType::Keccak256);
+                    if let Some(hint_data) = self.cache.get(&hint_data_key) {
+                        let precompile = Precompile::from_bytes(hint_data).unwrap();
+                        let output = precompile.execute();
+                        assert_eq!(value, output, "zkvm precompile constraint failed!")
+                    } else {
+                        anyhow!("precompile hint data not found");
+                    }
                 }
             }
         }
