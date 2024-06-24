@@ -9,7 +9,8 @@ use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use hashbrown::HashMap;
 use kona_preimage::{HintWriterClient, PreimageKey, PreimageKeyType, PreimageOracleClient};
-use alloy_primitives::{Bytes, B256, keccak256};
+use alloy_primitives::keccak256;
+use sha2::{Digest, Sha256};
 use serde::{Deserialize, Serialize};
 
 /// The global preimage oracle reader pipe.
@@ -79,13 +80,15 @@ impl InMemoryOracle {
                 },
                 PreimageKeyType::Keccak256 => {
                     let derived_key = PreimageKey::new(keccak256(value).into(), PreimageKeyType::Keccak256);
-                    assert_eq!(derived_key, *key, "zkvm keccak constraint failed! value: {:?}, key: {:?}", value, key);
+                    assert_eq!(*key, derived_key, "zkvm keccak constraint failed!");
                 },
                 PreimageKeyType::GlobalGeneric => {
                     unimplemented!();
                 },
                 PreimageKeyType::Sha256 => {
-                    todo!();
+                    let mut derived_key: [u8; 32] = Sha256::digest(value).into();
+                    derived_key[0] = 0x01; // VERSIONED_HASH_VERSION_KZG
+                    assert_eq!(*key, derived_key, "zkvm sha256 constraint failed!");
                 },
                 PreimageKeyType::Blob => {
                     todo!();
