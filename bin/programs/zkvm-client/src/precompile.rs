@@ -1,5 +1,8 @@
 use alloy_primitives::aliases::{U8, U32, U128, U256, U384, U512, U1024};
+use alloc::vec::Vec;
 use anyhow::{anyhow, Result};
+
+extern crate alloc;
 
 #[repr(u8)]
 pub enum Precompile {
@@ -16,24 +19,25 @@ pub enum Precompile {
 }
 
 impl Precompile {
-    pub fn from_bytes(hint_data: &Vec<u8>) -> Self {
+    pub fn from_bytes(hint_data: &Vec<u8>) -> Result<Self> {
         let (addr, input) = hint_data.split_at(20);
         let addr = u128::from_be_bytes(addr.try_into().unwrap());
 
         let precompile = match addr {
             1 => {
                 if input.len() != 128 {
-                    panic!("wrong input length")
+                    return Err(anyhow!("wrong input length"));
                 }
                 let hash = U256::from_be_bytes::<32>(input[0..32].try_into().unwrap());
                 let v = U256::from_be_bytes::<32>(input[32..64].try_into().unwrap());
                 let r = U256::from_be_bytes::<32>(input[64..96].try_into().unwrap());
                 let s = U256::from_be_bytes::<32>(input[96..128].try_into().unwrap());
-                Self::ECRECOVER(hash, v, r, s)
+
+                Ok(Self::ECRECOVER(hash, v, r, s))
             },
-            2 => Self::SHA256(input.to_vec()),
-            3 => Self::RIPEMD160(input.to_vec()),
-            4 => Self::ID(input.to_vec()),
+            2 => Ok(Self::SHA256(input.to_vec())),
+            3 => Ok(Self::RIPEMD160(input.to_vec())),
+            4 => Ok(Self::ID(input.to_vec())),
             5 => {
                 let b_size = U256::from_be_bytes::<32>(input[0..32].try_into().unwrap());
                 let e_size = U256::from_be_bytes::<32>(input[32..64].try_into().unwrap());
@@ -44,18 +48,18 @@ impl Precompile {
                 let m_size_as_usize = usize::try_from(m_size).unwrap();
 
                 if input.len() != 96 + b_size_as_usize + e_size_as_usize + m_size_as_usize {
-                    panic!("wrong input length")
+                    return Err(anyhow!("wrong input length"));
                 };
 
                 let b = input[96..96 + b_size_as_usize].to_vec();
                 let e = input[96 + b_size_as_usize..96 + b_size_as_usize + e_size_as_usize].to_vec();
                 let m = input[96 + b_size_as_usize + e_size_as_usize..].to_vec();
 
-                Self::MODEXP(b_size, e_size, m_size, b, e, m)
+                Ok(Self::MODEXP(b_size, e_size, m_size, b, e, m))
             }
             6 => {
                 if input.len() != 128 {
-                    panic!("wrong input length")
+                    return Err(anyhow!("wrong input length"));
                 }
 
                 let x1 = U256::from_be_bytes::<32>(input[0..32].try_into().unwrap());
@@ -63,22 +67,22 @@ impl Precompile {
                 let x2 = U256::from_be_bytes::<32>(input[64..96].try_into().unwrap());
                 let y2 = U256::from_be_bytes::<32>(input[96..128].try_into().unwrap());
 
-                Self::ECADD(x1, y1, x2, y2)
+                Ok(Self::ECADD(x1, y1, x2, y2))
             }
             7 => {
                 if input.len() != 96 {
-                    panic!("wrong input length")
+                    return Err(anyhow!("wrong input length"));
                 }
 
                 let x = U256::from_be_bytes::<32>(input[0..32].try_into().unwrap());
                 let y = U256::from_be_bytes::<32>(input[32..64].try_into().unwrap());
                 let k = U256::from_be_bytes::<32>(input[64..96].try_into().unwrap());
 
-                Self::ECMUL(x, y, k)
+                Ok(Self::ECMUL(x, y, k))
             }
             8 => {
                 if input.len() != 192 {
-                    panic!("wrong input length")
+                    return Err(anyhow!("wrong input length"));
                 }
 
                 let x1 = U256::from_be_bytes::<32>(input[0..32].try_into().unwrap());
@@ -88,11 +92,11 @@ impl Precompile {
                 let x3 = U256::from_be_bytes::<32>(input[128..160].try_into().unwrap());
                 let y3 = U256::from_be_bytes::<32>(input[160..192].try_into().unwrap());
 
-                Self::ECPAIRING(x1, y1, x2, y2, x3, y3)
+                Ok(Self::ECPAIRING(x1, y1, x2, y2, x3, y3))
             }
             9 => {
                 if input.len() != 212 {
-                    panic!("wrong input length")
+                    return Err(anyhow!("wrong input length"));
                 }
 
                 let rounds = U32::from_be_bytes::<4>(input[0..4].try_into().unwrap());
@@ -101,11 +105,11 @@ impl Precompile {
                 let t = U128::from_be_bytes::<16>(input[180..196].try_into().unwrap());
                 let f = U8::from_be_bytes::<1>(input[196..197].try_into().unwrap());
 
-                Self::BLAKE2F(rounds, h, m, t, f)
+                Ok(Self::BLAKE2F(rounds, h, m, t, f))
             }
             10 => {
                 if input.len() != 192 {
-                    panic!("wrong input length")
+                    return Err(anyhow!("wrong input length"));
                 }
 
                 let hash = U256::from_be_bytes::<32>(input[0..32].try_into().unwrap());
@@ -114,9 +118,9 @@ impl Precompile {
                 let commitment = U384::from_be_bytes::<48>(input[96..144].try_into().unwrap());
                 let proof = U384::from_be_bytes::<48>(input[144..192].try_into().unwrap());
 
-                Self::POINTEVAL(hash, x, y, commitment, proof)
+                Ok(Self::POINTEVAL(hash, x, y, commitment, proof))
             }
-            _ => panic!("unknown precompile")
+            _ => return Err(anyhow!("unknown precompile")),
         };
 
         precompile

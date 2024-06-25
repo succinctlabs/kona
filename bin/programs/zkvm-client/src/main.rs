@@ -5,6 +5,9 @@
 
 mod boot;
 mod oracle;
+mod precompile;
+
+pub use precompile::Precompile;
 
 use kona_client::CachingOracle;
 use kona_executor::StatelessL2BlockExecutor;
@@ -15,7 +18,7 @@ use alloy_consensus::Header;
 use cfg_if::cfg_if;
 use kona_client::{
     l1::{DerivationDriver, OracleBlobProvider, OracleL1ChainProvider},
-    l2::{OracleL2ChainProvider, TrieDBHintWriter},
+    l2::{OracleL2ChainProvider},
     BootInfo,
 };
 
