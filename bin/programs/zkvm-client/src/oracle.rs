@@ -11,7 +11,7 @@ use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use hashbrown::HashMap;
 use kona_preimage::{HintWriterClient, PreimageKey, PreimageKeyType, PreimageOracleClient};
-use alloy_primitives::{keccak256, Address, address};
+use alloy_primitives::{keccak256, FixedBytes};
 use sha2::{Digest, Sha256};
 use serde::{Deserialize, Serialize};
 
@@ -71,10 +71,19 @@ impl HintWriterClient for InMemoryOracle {
     }
 }
 
+#[derive(Default)]
+struct Blob {
+    // TODO: Advantage / disadvantage of using FixedBytes?
+    commitment: FixedBytes<48>,
+    // TODO: Import and use Blob type from kona-derive?
+    data: FixedBytes<4096>,
+    kzg_proof: FixedBytes<48>,
+}
+
 impl InMemoryOracle {
     pub fn verify(&self) -> Result<()> {
+        let mut blobs: HashMap<FixedBytes<48>, Blob> = HashMap::new();
 
-        // TODO: Move all verification logic here.
         for (key, value) in self.cache.iter() {
             match key.key_type() {
                 PreimageKeyType::Local => {
@@ -94,7 +103,33 @@ impl InMemoryOracle {
                     assert_eq!(*key, derived_key, "zkvm sha256 constraint failed!");
                 },
                 PreimageKeyType::Blob => {
-                    todo!();
+                    let blob_data_key = PreimageKey::new(
+                        <PreimageKey as Into<[u8;32]>>::into(*key),
+                        PreimageKeyType::Keccak256
+                    );
+
+                    if let Some(blob_data) = self.cache.get(&blob_data_key) {
+                        let commitment: FixedBytes<48> = blob_data[..48].try_into().unwrap();
+                        let element: [u8; 8] = blob_data[72..].try_into().unwrap();
+                        let element: u64 = u64::from_be_bytes(element);
+
+                        // value is 32 byte segment from blob, so insert it in the right place
+                        blobs
+                            .entry(commitment)
+                            .or_insert(Blob::default())
+                            .data
+                            .get_mut((element as usize) << 5..(element as usize + 1) << 5)
+                            .map(|slice| {
+                                if slice.iter().all(|&byte| byte == 0) {
+                                    slice.copy_from_slice(value);
+                                    Ok(())
+                                } else {
+                                    return Err(anyhow!("trying to overwrite existing blob data"));
+                                }
+                            });
+                    } else {
+                        return Err(anyhow!("blob data not found"));
+                    }
                     // Aggregate blobs and proofs in memory and verify after loop.
                     // Check that range is empty then add it (should be guaranteed because can't add twice, can optimize out later)
                 },
@@ -110,15 +145,20 @@ impl InMemoryOracle {
                     if let Some(hint_data) = self.cache.get(&hint_data_key) {
                         let precompile = Precompile::from_bytes(hint_data).unwrap();
                         let output = precompile.execute();
-                        assert_eq!(value, output, "zkvm precompile constraint failed!")
+                        assert_eq!(value, &output, "zkvm precompile constraint failed!")
                     } else {
-                        anyhow!("precompile hint data not found");
+                        return Err(anyhow!("precompile hint data not found"));
                     }
                 }
             }
         }
 
         // Blob verification of complete blobs goes here.
+        for (commitment, blob) in blobs.iter() {
+            // call out to kzg-rs to verify that the full blob is valid
+            // kzg::verify_blob_kzg_proof(&blob.data, commitment, &blob.kzg_proof)
+                // .map_err(|e| format!("blob verification failed for {:?}: {}", commitment, e))?;
+        }
 
         Ok(())
     }
