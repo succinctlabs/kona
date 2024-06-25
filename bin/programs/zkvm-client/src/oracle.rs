@@ -78,7 +78,7 @@ impl InMemoryOracle {
         for (key, value) in self.cache.iter() {
             match key.key_type() {
                 PreimageKeyType::Local => {
-                    todo!();
+                    // no op - these are public values so verification happens in solidity
                 },
                 PreimageKeyType::Keccak256 => {
                     let derived_key = PreimageKey::new(keccak256(value).into(), PreimageKeyType::Keccak256);
@@ -88,9 +88,9 @@ impl InMemoryOracle {
                     unimplemented!();
                 },
                 PreimageKeyType::Sha256 => {
-                    // TODO: It's not really the SHA256 then... Is the only time this is used for KZG?
-                    let mut derived_key: [u8; 32] = Sha256::digest(value).into();
-                    derived_key[0] = 0x01; // VERSIONED_HASH_VERSION_KZG
+                    let derived_key: [u8; 32] = Sha256::digest(value).into();
+                    // TODO: Confirm we don't need `derived_key[0] = 0x01; // VERSIONED_HASH_VERSION_KZG` because it's overwritten by PreimageKey
+                    let derived_key = PreimageKey::new(derived_key, PreimageKeyType::Sha256);
                     assert_eq!(*key, derived_key, "zkvm sha256 constraint failed!");
                 },
                 PreimageKeyType::Blob => {
@@ -99,7 +99,14 @@ impl InMemoryOracle {
                     // Check that range is empty then add it (should be guaranteed because can't add twice, can optimize out later)
                 },
                 PreimageKeyType::Precompile => {
-                    let hint_data_key = PreimageKey::new(*key.into(), PreimageKeyType::Keccak256);
+                    // Convert the Precompile type to a Keccak type. This is the key to get the hint data.
+                    let hint_data_key = PreimageKey::new(
+                        <PreimageKey as Into<[u8;32]>>::into(*key),
+                        PreimageKeyType::Keccak256
+                    );
+
+                    // Look up the hint data in the cache. It should always exist, because we only
+                    // set Precompile KV pairs along with Keccak KV pairs for the hint data.
                     if let Some(hint_data) = self.cache.get(&hint_data_key) {
                         let precompile = Precompile::from_bytes(hint_data).unwrap();
                         let output = precompile.execute();
