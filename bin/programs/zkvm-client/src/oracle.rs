@@ -88,6 +88,7 @@ impl InMemoryOracle {
                     unimplemented!();
                 },
                 PreimageKeyType::Sha256 => {
+                    // TODO: It's not really the SHA256 then... Is the only time this is used for KZG?
                     let mut derived_key: [u8; 32] = Sha256::digest(value).into();
                     derived_key[0] = 0x01; // VERSIONED_HASH_VERSION_KZG
                     assert_eq!(*key, derived_key, "zkvm sha256 constraint failed!");
