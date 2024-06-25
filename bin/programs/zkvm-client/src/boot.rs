@@ -6,7 +6,7 @@ use anyhow::{anyhow, Result};
 use crate::Oracle;
 use kona_preimage::{PreimageKey, PreimageOracleClient};
 use kona_primitives::{RollupConfig, OP_MAINNET_CONFIG};
-use serde::{Serialize, Deserialize};
+use serde::{Serialize as SerdeSerialize, Deserialize as SerdeDeserialize};
 
 /// The local key ident for the L1 head hash.
 pub const L1_HEAD_KEY: U256 = U256::from_be_slice(&[1]);
@@ -108,7 +108,7 @@ fn rollup_config_from_chain_id(chain_id: u64) -> Result<RollupConfig> {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, SerdeSerialize, SerdeDeserialize)]
 pub struct BootInfoWithoutRollupConfig {
     pub l1_head: B256,
     pub l2_output_root: B256,
