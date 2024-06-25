@@ -95,6 +95,8 @@ impl InMemoryOracle {
                 },
                 PreimageKeyType::Blob => {
                     todo!();
+                    // Aggregate blobs and proofs in memory and verify after loop.
+                    // Check that range is empty then add it (should be guaranteed because can't add twice, can optimize out later)
                 },
                 PreimageKeyType::Precompile => {
                     let hint_data_key = PreimageKey::new(*key.into(), PreimageKeyType::Keccak256);
@@ -108,6 +110,8 @@ impl InMemoryOracle {
                 }
             }
         }
+
+        // Blob verification of complete blobs goes here.
 
         Ok(())
     }
