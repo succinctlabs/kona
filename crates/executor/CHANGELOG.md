@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.2](https://github.com/moongate-forks/kona/compare/kona-executor-v0.0.1...kona-executor-v0.0.2) - 2024-06-27
+
+### Other
+- useless comment
+
 ## [0.0.1](https://github.com/ethereum-optimism/kona/releases/tag/kona-executor-v0.0.1) - 2024-06-22
 
 ### Other

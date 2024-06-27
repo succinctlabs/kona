@@ -6,6 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3](https://github.com/moongate-forks/kona/compare/kona-derive-v0.0.2...kona-derive-v0.0.3) - 2024-06-27
+
+### Added
+- *(derive)* more stage metrics ([#326](https://github.com/moongate-forks/kona/pull/326))
+- *(derive)* Granular Provider Metrics ([#325](https://github.com/moongate-forks/kona/pull/325))
+- *(derive)* Stage Level Metrics ([#309](https://github.com/moongate-forks/kona/pull/309))
+- *(examples)* Trusted Sync Metrics ([#308](https://github.com/moongate-forks/kona/pull/308))
+
+### Fixed
+- *(examples)* don't panic on validation fetch failure ([#327](https://github.com/moongate-forks/kona/pull/327))
+- *(derive)* Warnings with metrics macro ([#322](https://github.com/moongate-forks/kona/pull/322))
+
+### Other
+- *(derive)* Remove noisy batch logs ([#329](https://github.com/moongate-forks/kona/pull/329))
+- clean up trusted sync loop ([#318](https://github.com/moongate-forks/kona/pull/318))
+- *(docs)* Label Cleanup ([#307](https://github.com/moongate-forks/kona/pull/307))
+- *(derive)* add targets to stage logs ([#310](https://github.com/moongate-forks/kona/pull/310))
+
 ## [0.0.2](https://github.com/ethereum-optimism/kona/compare/kona-derive-v0.0.1...kona-derive-v0.0.2) - 2024-06-22
 
 ### Added
