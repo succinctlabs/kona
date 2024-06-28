@@ -4,7 +4,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
 pub use crate::{
-    cli::HostCli,
+    cli::{HostCli, init_tracing_subscriber},
     server::PreimageServer,
 };
 use anyhow::{anyhow, Result};

@@ -4,6 +4,12 @@
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
 mod cli;
+mod fetcher;
+mod kv;
+mod server;
+mod types;
+mod util;
+
 use crate::cli::init_tracing_subscriber;
 use tracing::info;
 
