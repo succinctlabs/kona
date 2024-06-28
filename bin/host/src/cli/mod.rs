@@ -18,7 +18,7 @@ pub(crate) use tracing_util::init_tracing_subscriber;
 
 // TODO: Why are there new warnings here? Figure out before merging.
 /// The host binary CLI application arguments.
-#[derive(Parser, Serialize, Clone)]
+#[derive(Parser, Serialize, Clone, Debug)]
 pub struct HostCli {
     /// Verbosity level (0-4)
     #[arg(long, short, help = "Verbosity level (0-4)", action = ArgAction::Count)]
