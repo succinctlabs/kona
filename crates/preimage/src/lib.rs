@@ -6,7 +6,7 @@
 
 extern crate alloc;
 
-pub mod key;
+mod key;
 pub use key::{PreimageKey, PreimageKeyType};
 
 mod oracle;
@@ -18,7 +18,7 @@ pub use hint::{HintReader, HintWriter};
 mod pipe;
 pub use pipe::PipeHandle;
 
-pub mod traits;
+mod traits;
 pub use traits::{
     CommsClient, HintReaderServer, HintWriterClient, PreimageOracleClient, PreimageOracleServer,
 };
