@@ -31,17 +31,6 @@ use tokio::{process::Command, sync::RwLock, task};
 use tracing::{error, info};
 use types::NativePipeFiles;
 
-<<<<<<< HEAD
-// TODO: pub?
-pub mod cli;
-pub mod fetcher;
-pub mod kv;
-pub mod server;
-pub mod types;
-pub mod util;
-
-=======
->>>>>>> zach/host-library
 /// Starts the [PreimageServer] in the primary thread. In this mode, the host program has been
 /// invoked by the Fault Proof VM and the client program is running in the parent process.
 pub async fn start_server(cfg: HostCli) -> Result<()> {
