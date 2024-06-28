@@ -3,6 +3,7 @@
 #![deny(unused_must_use, rust_2018_idioms)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
+<<<<<<< HEAD
 mod cli;
 mod fetcher;
 mod kv;
@@ -11,12 +12,14 @@ mod types;
 mod util;
 
 use crate::cli::init_tracing_subscriber;
+=======
+use kona_host::{
+    start_server, start_server_and_native_client, init_tracing_subscriber, HostCli
+};
+>>>>>>> zach/host-library
 use tracing::info;
-
 use anyhow::Result;
 use clap::Parser;
-
-use kona_host::{start_server, start_server_and_native_client, HostCli};
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
