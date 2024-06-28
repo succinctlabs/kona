@@ -26,12 +26,12 @@ use tracing::{error, info};
 use types::NativePipeFiles;
 
 // TODO: pub?
-mod cli;
-mod fetcher;
-mod kv;
-mod server;
-mod types;
-mod util;
+pub mod cli;
+pub mod fetcher;
+pub mod kv;
+pub mod server;
+pub mod types;
+pub mod util;
 
 /// Starts the [PreimageServer] in the primary thread. In this mode, the host program has been
 /// invoked by the Fault Proof VM and the client program is running in the parent process.
