@@ -90,6 +90,7 @@ where
     ///    block.
     pub fn execute_payload(&mut self, payload: L2PayloadAttributes) -> Result<&Header> {
         // Prepare the `revm` environment.
+        println!("cycle-tracker-start: top-level-execute-payload");
         let initialized_block_env = Self::prepare_block_env(
             self.revm_spec_id(payload.timestamp),
             self.config,
@@ -111,6 +112,7 @@ where
         );
 
         // Apply the pre-block EIP-4788 contract call.
+        println!("cycle-tracker-start: beacon-root");
         pre_block_beacon_root_contract_call(
             &mut self.state,
             self.config,
@@ -119,14 +121,18 @@ where
             &initialized_block_env,
             &payload,
         )?;
+        println!("cycle-tracker-end: beacon-root");
 
         // Ensure that the create2 contract is deployed upon transition to the Canyon hardfork.
+        println!("cycle-tracker-start: c2-deployer");
         ensure_create2_deployer_canyon(&mut self.state, self.config, payload.timestamp)?;
+        println!("cycle-tracker-end: c2-deployer");
 
         let mut cumulative_gas_used = 0u64;
         let mut receipts: Vec<OpReceiptEnvelope> = Vec::with_capacity(payload.transactions.len());
         let is_regolith = self.config.is_regolith_active(payload.timestamp);
 
+        println!("cycle-tracker-start: build-evm");
         // Construct the block-scoped EVM with the given configuration.
         // The transaction environment is set within the loop for each transaction.
         let mut evm = Evm::builder()
@@ -138,7 +144,9 @@ where
             ))
             .append_handler_register(PO::set_precompiles)
             .build();
+        println!("cycle-tracker-end: build-evm");
 
+        println!("cycle-tracker-start: txs");
         // Execute the transactions in the payload.
         let transactions = payload
             .transactions
@@ -149,6 +157,7 @@ where
             })
             .collect::<Result<Vec<_>>>()?;
         for (transaction, raw_transaction) in transactions {
+            println!("new tx");
             // The sum of the transaction’s gas limit, Tg, and the gas utilized in this block prior,
             // must be no greater than the block’s gasLimit.
             let block_available_gas = (gas_limit - cumulative_gas_used) as u128;
@@ -217,6 +226,7 @@ where
             );
             receipts.push(receipt);
         }
+        println!("cycle-tracker-end: txs");
 
         info!(
             target: "client_executor",
@@ -227,10 +237,13 @@ where
         // Drop the EVM to rid the exclusive reference to the database.
         drop(evm);
 
+        println!("cycle-tracker-start: merge-transitions");
         // Merge all state transitions into the cache state.
         debug!(target: "client_executor", "Merging state transitions");
         self.state.merge_transitions(BundleRetention::Reverts);
+        println!("cycle-tracker-end: merge-transitions");
 
+        println!("cycle-tracker-start: compute-roots");
         // Take the bundle state.
         let bundle = self.state.take_bundle();
 
@@ -249,9 +262,14 @@ where
         let withdrawals_root =
             self.config.is_canyon_active(payload.timestamp).then_some(EMPTY_ROOT_HASH);
 
+        println!("cycle-tracker-end: compute-roots");
+
+        println!("cycle-tracker-start: logs-bloom");
         // Compute logs bloom filter for the block.
         let logs_bloom = logs_bloom(receipts.iter().flat_map(|receipt| receipt.logs()));
+        println!("cycle-tracker-end: logs-bloom");
 
+        println!("cycle-tracker-start: cancun-fields");
         // Compute Cancun fields, if active.
         let (blob_gas_used, excess_blob_gas) = self
             .config
@@ -270,7 +288,9 @@ where
                 (Some(0), Some(excess_blob_gas as u128))
             })
             .unwrap_or_default();
+        println!("cycle-tracker-end: cancun-fields");
 
+        println!("cycle-tracker-start: construct-header");
         // Construct the new header.
         let header = Header {
             parent_hash: self.state.database.parent_block_header().seal(),
@@ -309,6 +329,9 @@ where
 
         // Update the parent block hash in the state database.
         self.state.database.set_parent_block_header(header);
+        println!("cycle-tracker-end: construct-header");
+
+        println!("cycle-tracker-end: top-level-execute-payload");
 
         Ok(self.state.database.parent_block_header())
     }
