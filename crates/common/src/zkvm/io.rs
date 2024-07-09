@@ -15,6 +15,6 @@ impl BasicKernelInterface for ZkvmIO {
     }
 
     fn exit(_code: usize) -> ! {
-        Err(anyhow::anyhow!("exit not implemented"))
+        unimplemented!();
     }
 }
