@@ -71,6 +71,7 @@ impl<F: ChainProvider + Send> OriginAdvancer for L1Traversal<F> {
     /// This function fetches the next L1 [BlockInfo] from the data source and updates the
     /// [SystemConfig] with the receipts from the block.
     async fn advance_origin(&mut self) -> StageResult<()> {
+        println!("cycle-tracker-start: l1-trav-advance-origin");
         // Pull the next block or return EOF.
         // StageError::EOF has special handling further up the pipeline.
         let block = match self.block {
@@ -107,6 +108,8 @@ impl<F: ChainProvider + Send> OriginAdvancer for L1Traversal<F> {
         crate::set!(ORIGIN_GAUGE, next_l1_origin.number as i64);
         self.block = Some(next_l1_origin);
         self.done = false;
+
+        println!("cycle-tracker-end: l1-trav-advance-origin");
         Ok(())
     }
 }

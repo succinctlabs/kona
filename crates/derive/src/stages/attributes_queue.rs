@@ -85,6 +85,7 @@ where
         &mut self,
         parent: L2BlockInfo,
     ) -> StageResult<L2AttributesWithParent> {
+        println!("cycle-tracker-start: attr-queue-next-attrs");
         crate::timer!(START, STAGE_ADVANCE_RESPONSE_TIME, &["attributes_queue"], timer);
         let batch = match self.load_batch(parent).await {
             Ok(batch) => batch,
@@ -108,6 +109,8 @@ where
         // Clear out the local state once payload attributes are prepared.
         self.batch = None;
         self.is_last_in_span = false;
+
+        println!("cycle-tracker-end: attr-queue-next-attrs");
         Ok(populated_attributes)
     }
 
@@ -118,6 +121,7 @@ where
         batch: SingleBatch,
         parent: L2BlockInfo,
     ) -> StageResult<L2PayloadAttributes> {
+        println!("cycle-tracker-start: attr-queue-create-next-attrs");
         // Sanity check parent hash
         if batch.parent_hash != parent.block_info.hash {
             return Err(StageError::Reset(ResetError::BadParentHash(
@@ -147,6 +151,8 @@ where
             "generated attributes in payload queue: txs={}, timestamp={}",
             tx_count, batch.timestamp
         );
+
+        println!("cycle-tracker-end: attr-queue-create-next-attrs");
 
         Ok(attributes)
     }

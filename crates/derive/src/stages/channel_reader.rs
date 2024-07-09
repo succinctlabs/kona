@@ -159,6 +159,8 @@ pub(crate) struct BatchReader {
 impl BatchReader {
     /// Pulls out the next batch from the reader.
     pub(crate) fn next_batch(&mut self, cfg: &RollupConfig) -> Option<Batch> {
+        println!("cycle-tracker-start: chan-reader-next-batch");
+
         // If the data is not already decompressed, decompress it.
         let mut brotli_used = false;
 
@@ -207,6 +209,8 @@ impl BatchReader {
 
         // Advance the cursor on the reader.
         self.cursor = self.decompressed.len() - decompressed_reader.len();
+
+        println!("cycle-tracker-end: chan-reader-next-batch");
 
         Some(batch)
     }

@@ -77,6 +77,8 @@ where
 
     /// Adds new L1 data to the channel bank. Should only be called after all data has been read.
     pub fn ingest_frame(&mut self, frame: Frame) -> StageResult<()> {
+        println!("cycle-tracker-start: chan-bank-ingest-frame");
+
         let origin = self.origin().ok_or(StageError::MissingOrigin)?;
 
         // Get the channel for the frame, or create a new one if it doesn't exist.
@@ -111,7 +113,11 @@ where
             }
         }
 
-        self.prune()
+        let ret = self.prune();
+
+        println!("cycle-tracker-end: chan-bank-ingest-frame");
+
+        ret
     }
 
     /// Read the raw data of the first channel, if it's timed-out or closed.

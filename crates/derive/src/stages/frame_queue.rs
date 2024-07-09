@@ -67,6 +67,7 @@ where
     P: FrameQueueProvider + PreviousStage + Send + Debug,
 {
     async fn next_frame(&mut self) -> StageResult<Frame> {
+        println!("cycle-tracker-start: frame-queue-next-frame");
         if self.queue.is_empty() {
             match self.prev.next_data().await {
                 Ok(data) => {
@@ -92,6 +93,8 @@ where
             trace!(target: "frame-queue", "Queue is empty after fetching data. Retrying next_frame.");
             return Err(StageError::NotEnoughData);
         }
+
+        println!("cycle-tracker-end: frame-queue-next-frame");
 
         self.queue.pop_front().ok_or_else(|| anyhow!("Frame queue is impossibly empty.").into())
     }

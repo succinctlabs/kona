@@ -84,6 +84,7 @@ where
     type Item = DAP::Item;
 
     async fn next_data(&mut self) -> StageResult<Self::Item> {
+        println!("cycle-tracker-start: l1-ret-next-data");
         if self.data.is_none() {
             let next = self
                 .prev
@@ -94,6 +95,8 @@ where
         }
 
         let data = self.data.as_mut().expect("Cannot be None").next().await.ok_or(StageError::Eof);
+
+        println!("cycle-tracker-end: l1-ret-next-data");
         match data {
             Ok(Ok(data)) => Ok(data),
             Err(StageError::Eof) | Ok(Err(StageError::Eof)) => {

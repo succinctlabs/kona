@@ -112,6 +112,7 @@ where
         empty: bool,
         parent: L2BlockInfo,
     ) -> StageResult<Batch> {
+        println!("cycle-tracker-start: batch-queue-derive-next-batch");
         // Cannot derive a batch if no origin was prepared.
         if self.l1_blocks.is_empty() {
             return Err(StageError::MissingOrigin);
@@ -201,6 +202,8 @@ where
         }
 
         let next_epoch = self.l1_blocks[1];
+
+        println!("cycle-tracker-end: batch-queue-derive-next-batch");
 
         // Fill with empty L2 blocks of the same epoch until we meet the time of the next L1 origin,
         // to preserve that L2 time >= L1 time. If this is the first block of the epoch, always
