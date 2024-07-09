@@ -171,6 +171,8 @@ where
         }
         self.batches = remaining;
 
+        println!("cycle-tracker-end: batch-queue-derive-next-batch");
+
         if let Some(nb) = next_batch {
             info!(target: "batch-queue", "Next batch found for timestamp {}", nb.batch.timestamp());
             return Ok(nb.batch);
@@ -202,8 +204,6 @@ where
         }
 
         let next_epoch = self.l1_blocks[1];
-
-        println!("cycle-tracker-end: batch-queue-derive-next-batch");
 
         // Fill with empty L2 blocks of the same epoch until we meet the time of the next L1 origin,
         // to preserve that L2 time >= L1 time. If this is the first block of the epoch, always
