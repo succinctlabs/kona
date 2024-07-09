@@ -16,6 +16,7 @@ pub(crate) use parser::parse_b256;
 mod tracing_util;
 pub use tracing_util::init_tracing_subscriber;
 
+// TODO: Why are there new warnings here? Figure out before merging.
 /// The host binary CLI application arguments.
 #[derive(Parser, Serialize, Clone, Debug)]
 pub struct HostCli {
