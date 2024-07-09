@@ -85,7 +85,6 @@ where
         &mut self,
         parent: L2BlockInfo,
     ) -> StageResult<L2AttributesWithParent> {
-        println!("cycle-tracker-start: attr-queue-next-attrs");
         crate::timer!(START, STAGE_ADVANCE_RESPONSE_TIME, &["attributes_queue"], timer);
         let batch = match self.load_batch(parent).await {
             Ok(batch) => batch,
@@ -110,7 +109,6 @@ where
         self.batch = None;
         self.is_last_in_span = false;
 
-        println!("cycle-tracker-end: attr-queue-next-attrs");
         Ok(populated_attributes)
     }
 

@@ -134,7 +134,6 @@ impl<O: CommsClient + Send + Sync + Debug> DerivationDriver<O> {
         // As we start the safe head at the disputed block's parent, we step the pipeline until the
         // first attributes are produced. All batches at and before the safe head will be
         // dropped, so the first payload will always be the disputed one.
-        println!("cycle-tracker-start: driver");
         let mut attributes = None;
         while attributes.is_none() {
             match self.pipeline.step(self.l2_safe_head).await {
@@ -146,7 +145,6 @@ impl<O: CommsClient + Send + Sync + Debug> DerivationDriver<O> {
 
             attributes = self.pipeline.next();
         }
-        println!("cycle-tracker-end: driver");
 
         Ok(attributes.expect("Must be some"))
     }
