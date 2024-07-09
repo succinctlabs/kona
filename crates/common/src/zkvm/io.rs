@@ -7,15 +7,14 @@ pub struct ZkvmIO;
 
 impl BasicKernelInterface for ZkvmIO {
     fn write(_fd: FileDescriptor, _buf: &[u8]) -> Result<usize> {
-        unimplemented!();
+        Err(anyhow::anyhow!("write not implemented"))
     }
 
-
     fn read(_fd: FileDescriptor, _buf: &mut [u8]) -> Result<usize> {
-        unimplemented!();
+        Err(anyhow::anyhow!("read not implemented"))
     }
 
     fn exit(_code: usize) -> ! {
-        unimplemented!();
+        Err(anyhow::anyhow!("exit not implemented"))
     }
 }
