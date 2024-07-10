@@ -149,6 +149,7 @@ where
             })
             .collect::<Result<Vec<_>>>()?;
         for (transaction, raw_transaction) in transactions {
+            println!("new tx");
             // The sum of the transaction’s gas limit, Tg, and the gas utilized in this block prior,
             // must be no greater than the block’s gasLimit.
             let block_available_gas = (gas_limit - cumulative_gas_used) as u128;
@@ -249,6 +250,7 @@ where
         let withdrawals_root =
             self.config.is_canyon_active(payload.timestamp).then_some(EMPTY_ROOT_HASH);
 
+
         // Compute logs bloom filter for the block.
         let logs_bloom = logs_bloom(receipts.iter().flat_map(|receipt| receipt.logs()));
 
@@ -310,6 +312,7 @@ where
         // Update the parent block hash in the state database.
         self.state.database.set_parent_block_header(header);
 
+
         Ok(self.state.database.parent_block_header())
     }
 
@@ -330,49 +333,47 @@ where
         const L2_TO_L1_MESSAGE_PASSER_ADDRESS: Address =
             address!("4200000000000000000000000000000000000016");
 
-        // // Fetch the L2 to L1 message passer account from the cache or underlying trie.
-        // let storage_root =
-        //     match self.state.database.storage_roots().get(&L2_TO_L1_MESSAGE_PASSER_ADDRESS) {
-        //         Some(storage_root) => storage_root
-        //             .blinded_commitment()
-        //             .ok_or(anyhow!("Account storage root is unblinded"))?,
-        //         None => {
-        //             self.state
-        //                 .database
-        //                 .get_trie_account(&L2_TO_L1_MESSAGE_PASSER_ADDRESS)?
-        //                 .ok_or(anyhow!("L2 to L1 message passer account not found in trie"))?
-        //                 .storage_root
-        //         }
-        //     };
+        // Fetch the L2 to L1 message passer account from the cache or underlying trie.
+        let storage_root =
+            match self.state.database.storage_roots().get(&L2_TO_L1_MESSAGE_PASSER_ADDRESS) {
+                Some(storage_root) => storage_root
+                    .blinded_commitment()
+                    .ok_or(anyhow!("Account storage root is unblinded"))?,
+                None => {
+                    self.state
+                        .database
+                        .get_trie_account(&L2_TO_L1_MESSAGE_PASSER_ADDRESS)?
+                        .ok_or(anyhow!("L2 to L1 message passer account not found in trie"))?
+                        .storage_root
+                }
+            };
+
         let parent_header = self.state.database.parent_block_header();
-        println!("{}", parent_header.state_root);
 
+        info!(
+            target: "client_executor",
+            "Computing output root | Version: {version} | State root: {state_root} | Storage root: {storage_root} | Block hash: {hash}",
+            version = OUTPUT_ROOT_VERSION,
+            state_root = self.state.database.parent_block_header().state_root,
+            hash = parent_header.seal(),
+        );
 
-        // info!(
-        //     target: "client_executor",
-        //     "Computing output root | Version: {version} | State root: {state_root} | Storage root: {storage_root} | Block hash: {hash}",
-        //     version = OUTPUT_ROOT_VERSION,
-        //     state_root = self.state.database.parent_block_header().state_root,
-        //     hash = parent_header.seal(),
-        // );
+        // Construct the raw output.
+        let mut raw_output = [0u8; 128];
+        raw_output[31] = OUTPUT_ROOT_VERSION;
+        raw_output[32..64].copy_from_slice(parent_header.state_root.as_ref());
+        raw_output[64..96].copy_from_slice(storage_root.as_ref());
+        raw_output[96..128].copy_from_slice(parent_header.seal().as_ref());
+        let output_root = keccak256(raw_output);
 
-        // // Construct the raw output.
-        // let mut raw_output = [0u8; 128];
-        // raw_output[31] = OUTPUT_ROOT_VERSION;
-        // raw_output[32..64].copy_from_slice(parent_header.state_root.as_ref());
-        // raw_output[64..96].copy_from_slice(storage_root.as_ref());
-        // raw_output[96..128].copy_from_slice(parent_header.seal().as_ref());
-        // let output_root = keccak256(raw_output);
+        info!(
+            target: "client_executor",
+            "Computed output root for block # {block_number} | Output root: {output_root}",
+            block_number = parent_header.number,
+        );
 
-        // info!(
-        //     target: "client_executor",
-        //     "Computed output root for block # {block_number} | Output root: {output_root}",
-        //     block_number = parent_header.number,
-        // );
-
-        // // Hash the output and return
-        // Ok(output_root)
-        Err(anyhow!("Not implemented"))
+        // Hash the output and return
+        Ok(output_root)
     }
 
     /// Returns the active [SpecId] for the executor.
