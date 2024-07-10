@@ -347,30 +347,32 @@ where
         let parent_header = self.state.database.parent_block_header();
         println!("{}", parent_header.state_root);
 
-        info!(
-            target: "client_executor",
-            "Computing output root | Version: {version} | State root: {state_root} | Storage root: {storage_root} | Block hash: {hash}",
-            version = OUTPUT_ROOT_VERSION,
-            state_root = self.state.database.parent_block_header().state_root,
-            hash = parent_header.seal(),
-        );
 
-        // Construct the raw output.
-        let mut raw_output = [0u8; 128];
-        raw_output[31] = OUTPUT_ROOT_VERSION;
-        raw_output[32..64].copy_from_slice(parent_header.state_root.as_ref());
-        raw_output[64..96].copy_from_slice(storage_root.as_ref());
-        raw_output[96..128].copy_from_slice(parent_header.seal().as_ref());
-        let output_root = keccak256(raw_output);
+        // info!(
+        //     target: "client_executor",
+        //     "Computing output root | Version: {version} | State root: {state_root} | Storage root: {storage_root} | Block hash: {hash}",
+        //     version = OUTPUT_ROOT_VERSION,
+        //     state_root = self.state.database.parent_block_header().state_root,
+        //     hash = parent_header.seal(),
+        // );
 
-        info!(
-            target: "client_executor",
-            "Computed output root for block # {block_number} | Output root: {output_root}",
-            block_number = parent_header.number,
-        );
+        // // Construct the raw output.
+        // let mut raw_output = [0u8; 128];
+        // raw_output[31] = OUTPUT_ROOT_VERSION;
+        // raw_output[32..64].copy_from_slice(parent_header.state_root.as_ref());
+        // raw_output[64..96].copy_from_slice(storage_root.as_ref());
+        // raw_output[96..128].copy_from_slice(parent_header.seal().as_ref());
+        // let output_root = keccak256(raw_output);
 
-        // Hash the output and return
-        Ok(output_root)
+        // info!(
+        //     target: "client_executor",
+        //     "Computed output root for block # {block_number} | Output root: {output_root}",
+        //     block_number = parent_header.number,
+        // );
+
+        // // Hash the output and return
+        // Ok(output_root)
+        Err(anyhow!("Not implemented"))
     }
 
     /// Returns the active [SpecId] for the executor.
