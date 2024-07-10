@@ -330,21 +330,22 @@ where
         const L2_TO_L1_MESSAGE_PASSER_ADDRESS: Address =
             address!("4200000000000000000000000000000000000016");
 
-        // Fetch the L2 to L1 message passer account from the cache or underlying trie.
-        let storage_root =
-            match self.state.database.storage_roots().get(&L2_TO_L1_MESSAGE_PASSER_ADDRESS) {
-                Some(storage_root) => storage_root
-                    .blinded_commitment()
-                    .ok_or(anyhow!("Account storage root is unblinded"))?,
-                None => {
-                    self.state
-                        .database
-                        .get_trie_account(&L2_TO_L1_MESSAGE_PASSER_ADDRESS)?
-                        .ok_or(anyhow!("L2 to L1 message passer account not found in trie"))?
-                        .storage_root
-                }
-            };
+        // // Fetch the L2 to L1 message passer account from the cache or underlying trie.
+        // let storage_root =
+        //     match self.state.database.storage_roots().get(&L2_TO_L1_MESSAGE_PASSER_ADDRESS) {
+        //         Some(storage_root) => storage_root
+        //             .blinded_commitment()
+        //             .ok_or(anyhow!("Account storage root is unblinded"))?,
+        //         None => {
+        //             self.state
+        //                 .database
+        //                 .get_trie_account(&L2_TO_L1_MESSAGE_PASSER_ADDRESS)?
+        //                 .ok_or(anyhow!("L2 to L1 message passer account not found in trie"))?
+        //                 .storage_root
+        //         }
+        //     };
         let parent_header = self.state.database.parent_block_header();
+        println!("{}", parent_header.state_root);
 
         info!(
             target: "client_executor",
