@@ -149,7 +149,6 @@ where
             })
             .collect::<Result<Vec<_>>>()?;
         for (transaction, raw_transaction) in transactions {
-            println!("new tx");
             // The sum of the transaction’s gas limit, Tg, and the gas utilized in this block prior,
             // must be no greater than the block’s gasLimit.
             let block_available_gas = (gas_limit - cumulative_gas_used) as u128;
