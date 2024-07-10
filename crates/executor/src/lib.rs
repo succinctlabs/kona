@@ -331,7 +331,6 @@ where
             address!("4200000000000000000000000000000000000016");
 
         // Fetch the L2 to L1 message passer account from the cache or underlying trie.
-        println!("before");
         let storage_root =
             match self.state.database.storage_roots().get(&L2_TO_L1_MESSAGE_PASSER_ADDRESS) {
                 Some(storage_root) => storage_root
@@ -345,7 +344,6 @@ where
                         .storage_root
                 }
             };
-        println!("after");
         let parent_header = self.state.database.parent_block_header();
 
         info!(

@@ -201,6 +201,8 @@ where
 
         // Fetch the account from the trie.
         let hashed_address_nibbles = Nibbles::unpack(keccak256(address.as_slice()));
+        println!("{:?}", hashed_address_nibbles);
+        println!("{:?}", self.root_node);
         let Some(trie_account_rlp) = self.root_node.open(&hashed_address_nibbles, &self.fetcher)?
         else {
             return Ok(None);
