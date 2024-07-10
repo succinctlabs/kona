@@ -133,7 +133,6 @@ run-client-native-offline block_number l2_claim l2_output_root l2_head l1_head l
     --l2-output-root $L2_OUTPUT_ROOT \
     --l2-block-number $L2_BLOCK_NUMBER \
     --l2-chain-id $L2_CHAIN_ID \
-<<<<<<< HEAD
     --exec $CLIENT_BIN_PATH \
     --data-dir ./data \
     {{verbosity}}
@@ -182,11 +181,3 @@ run-client-asterisc-offline block_number l2_claim l2_output_root l2_head l1_head
     --data-dir ./data \
     --exec "" \
     {{verbosity}}
-=======
-    --l1-node-address $L1_NODE_ADDRESS \
-    --l1-beacon-address $L1_BEACON_ADDRESS \
-    --l2-node-address $L2_NODE_ADDRESS \
-    --exec $CLIENT_BIN_PATH \
-    --data-dir ./data \
-    {{verbosity}}
->>>>>>> zach/zkvmio

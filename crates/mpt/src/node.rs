@@ -135,6 +135,7 @@ impl TrieNode {
                 // reach out to the fetcher.
                 *self = TrieNode::Empty;
             } else {
+                println!("{}", commitment);
                 *self = TrieNode::decode(&mut fetcher.trie_node_preimage(*commitment)?.as_ref())
                     .map_err(|e| anyhow!(e))?;
             }
