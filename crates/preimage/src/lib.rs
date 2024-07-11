@@ -9,13 +9,19 @@ extern crate alloc;
 mod key;
 pub use key::{PreimageKey, PreimageKeyType};
 
+#[cfg(not(feature = "no-io"))]
 mod oracle;
+#[cfg(not(feature = "no-io"))]
 pub use oracle::{OracleReader, OracleServer};
 
+#[cfg(not(feature = "no-io"))]
 mod hint;
+#[cfg(not(feature = "no-io"))]
 pub use hint::{HintReader, HintWriter};
 
+#[cfg(not(feature = "no-io"))]
 mod pipe;
+#[cfg(not(feature = "no-io"))]
 pub use pipe::PipeHandle;
 
 mod traits;
