@@ -18,9 +18,7 @@ async-trait.workspace = true
 
 # local
 kona-common = { path = "../common", version = "0.0.2" }
-
-# external
-serde = { version = "1.0.203", features = ["derive"], optional = true }
+rkyv = { version = "0.7.44", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1.38.0", features = ["full"] }
@@ -28,5 +26,5 @@ tempfile = "3.10.1"
 
 [features]
 default = []
-serde = ["dep:serde"]
+rkyv = ["dep:rkyv"]
 no-io = ["kona-common/no-io"]

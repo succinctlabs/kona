@@ -11,8 +11,8 @@ pub use key::{PreimageKey, PreimageKeyType};
 
 mod traits;
 pub use traits::{
-    HintReaderServer, HintRouter, HintWriterClient, PreimageFetcher, PreimageOracleClient,
-    PreimageOracleServer,
+    CommsClient, HintReaderServer, HintRouter, HintWriterClient, PreimageFetcher,
+    PreimageOracleClient, PreimageOracleServer,
 };
 
 cfg_if::cfg_if! {
