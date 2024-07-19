@@ -21,7 +21,7 @@ use kona_derive::{
 use kona_mpt::TrieDBFetcher;
 use kona_preimage::{CommsClient, PreimageKey, PreimageKeyType};
 use kona_primitives::{BlockInfo, L2AttributesWithParent, L2BlockInfo};
-use tracing::{info, warn};
+use tracing::{info, warn, trace};
 
 /// An oracle-backed derivation pipeline.
 pub type OraclePipeline<O> =
@@ -173,12 +173,12 @@ impl<O: CommsClient + Send + Sync + Debug> DerivationDriver<O> {
         chain_provider: &mut OracleL1ChainProvider<O>,
         l2_chain_provider: &mut OracleL2ChainProvider<O>,
     ) -> Result<(BlockInfo, L2BlockInfo, Sealed<Header>)> {
-        warn!(target: "client_derivation_driver", "finding startup info");
+        trace!(target: "client_derivation_driver", "finding startup info");
         // Find the initial safe head, based off of the starting L2 block number in the boot info.
         caching_oracle
             .write(&HintType::StartingL2Output.encode_with(&[boot_info.l2_output_root.as_ref()]))
             .await?;
-        warn!(target: "client_derivation_driver", "wrote to oracle");
+        trace!(target: "client_derivation_driver", "wrote to oracle");
         let mut output_preimage = [0u8; 128];
         caching_oracle
             .get_exact(
@@ -187,19 +187,19 @@ impl<O: CommsClient + Send + Sync + Debug> DerivationDriver<O> {
             )
             .await?;
 
-        warn!(target: "client_derivation_driver", "Found L2 output root preimage");
+        trace!(target: "client_derivation_driver", "Found L2 output root preimage");
 
         let safe_hash =
             output_preimage[96..128].try_into().map_err(|_| anyhow!("Invalid L2 output root"))?;
         let safe_header = l2_chain_provider.header_by_hash(safe_hash)?;
-        warn!(target: "client_derivation_driver", "header by hash");
+        trace!(target: "client_derivation_driver", "header by hash");
         let safe_head_info = l2_chain_provider.l2_block_info_by_number(safe_header.number).await?;
-        warn!(target: "client_derivation_driver", "block info by number");
+        trace!(target: "client_derivation_driver", "block info by number");
 
         let l1_origin =
             chain_provider.block_info_by_number(safe_head_info.l1_origin.number).await?;
 
-        warn!(target: "client_derivation_driver", "l1 origin");
+        trace!(target: "client_derivation_driver", "l1 origin");
 
         Ok((l1_origin, safe_head_info, Sealed::new_unchecked(safe_header, safe_hash)))
     }
