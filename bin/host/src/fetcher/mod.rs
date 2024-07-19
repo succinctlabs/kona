@@ -375,6 +375,8 @@ where
                     anyhow::bail!("Invalid hint data length: {}", hint_data.len());
                 }
 
+                trace!(target: "fetcher", "lesssgo");
+
                 // Fetch the header for the L2 head block.
                 let raw_header: Bytes = self
                     .l2_provider
@@ -385,6 +387,8 @@ where
                 let header = Header::decode(&mut raw_header.as_ref())
                     .map_err(|e| anyhow!("Failed to decode header: {e}"))?;
 
+                    trace!(target: "fetcher", "got header");
+
                 // Fetch the storage root for the L2 head block.
                 let l2_to_l1_message_passer = self
                     .l2_provider
@@ -393,6 +397,8 @@ where
                     .await
                     .map_err(|e| anyhow!("Failed to fetch account proof: {e}"))?;
 
+                trace!(target: "fetcher", "got storage proof");
+
                 let mut raw_output = [0u8; 128];
                 raw_output[31] = OUTPUT_ROOT_VERSION;
                 raw_output[32..64].copy_from_slice(header.state_root.as_ref());
@@ -400,15 +406,21 @@ where
                 raw_output[96..128].copy_from_slice(self.l2_head.as_ref());
                 let output_root = keccak256(raw_output);
 
+                trace!(target: "fetcher", "calced root");
+
                 if output_root.as_slice() != hint_data.as_ref() {
                     anyhow::bail!("Output root does not match L2 head.");
                 }
+
+                trace!(target: "fetcher", "validated");
 
                 let mut kv_write_lock = self.kv_store.write().await;
                 kv_write_lock.set(
                     PreimageKey::new(*output_root, PreimageKeyType::Keccak256).into(),
                     raw_output.into(),
                 );
+
+                trace!(target: "fetcher", "wrote to storage");
             }
             HintType::L2StateNode => {
                 if hint_data.len() != 32 {
