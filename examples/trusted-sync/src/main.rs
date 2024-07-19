@@ -1,8 +1,8 @@
 use anyhow::Result;
 use clap::Parser;
-use kona_derive::online::*;
+use kona_derive::{online::*, types::StageError};
 use std::sync::Arc;
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
 
 mod cli;
 mod metrics;
@@ -66,7 +66,7 @@ async fn sync(cli: cli::Cli) -> Result<()> {
         info!(target: LOG_TARGET, "Starting {} blocks from tip at L2 block number: {}", blocks, start);
     }
     metrics::START_L2_BLOCK.inc_by(start);
-    println!("Starting from L2 block number: {}", metrics::START_L2_BLOCK.get());
+    info!(target: LOG_TARGET, "Starting from L2 block number: {}", metrics::START_L2_BLOCK.get());
 
     let mut l2_provider = AlloyL2ChainProvider::new_http(l2_rpc_url.clone(), cfg.clone());
     let attributes =
@@ -79,28 +79,100 @@ async fn sync(cli: cli::Cli) -> Result<()> {
         .l2_block_info_by_number(start)
         .await
         .expect("Failed to fetch genesis L2 block info for pipeline cursor");
-    metrics::SAFE_L2_HEAD.inc_by(cursor.block_info.number);
+    metrics::SAFE_L2_HEAD.set(cursor.block_info.number as i64);
     let tip = l1_provider
         .block_info_by_number(cursor.l1_origin.number)
         .await
         .expect("Failed to fetch genesis L1 block info for pipeline tip");
     let validator = validation::OnlineValidator::new_http(l2_rpc_url.clone(), &cfg);
+    let genesis_l2_block_number = cfg.genesis.l2.number;
     let mut pipeline =
         new_online_pipeline(cfg, l1_provider, dap, l2_provider.clone(), attributes, tip);
 
-    // Reset the failed payload derivation metric to 0 so it can be queried.
+    // Reset metrics so they can be queried.
     metrics::FAILED_PAYLOAD_DERIVATION.reset();
+    metrics::DRIFT_WALKBACK.set(0);
+    metrics::DRIFT_WALKBACK_TIMESTAMP.set(0);
+    metrics::DERIVED_ATTRIBUTES_COUNT.reset();
 
     // Continuously step on the pipeline and validate payloads.
     let mut advance_cursor_flag = false;
     loop {
-        info!(target: LOG_TARGET, "Validated payload attributes number {}", metrics::DERIVED_ATTRIBUTES_COUNT.get());
-        info!(target: LOG_TARGET, "Pending l2 safe head num: {}", cursor.block_info.number);
+        // Update the reference l2 head.
+        match l2_provider.latest_block_number().await {
+            Ok(latest) => {
+                let prev = metrics::REFERENCE_L2_HEAD.get();
+                metrics::REFERENCE_L2_HEAD.set(latest as i64);
+                let timestamp = match std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|s| s.as_secs())
+                {
+                    Ok(time) => time,
+                    Err(e) => {
+                        error!(target: LOG_TARGET, "Failed to get latest timestamp in seconds: {:?}", e);
+                        continue;
+                    }
+                };
+
+                // Update the timestamp
+                if latest as i64 > prev {
+                    metrics::LATEST_REF_SAFE_HEAD_UPDATE.set(timestamp as i64);
+                }
+
+                // Don't check drift if we're within 10 blocks of origin.
+                if cursor.block_info.number - genesis_l2_block_number <= 10 {
+                    warn!(target: LOG_TARGET, "Can't walk back further. Cursor: {}, Genesis: {}", cursor.block_info.number, genesis_l2_block_number);
+                } else {
+                    // Check if we have drift - walk back in case of a re-org.
+                    // Wait for at least 500 drift and 5 minutes since the last walkback.
+                    let drift = latest as i64 - cursor.block_info.number as i64;
+
+                    // If walkback isn't enabled, jump to 10 blocks less than the reference l2
+                    // head.
+                    if drift > cli.drift_threshold as i64 && !cli.enable_reorg_walkback {
+                        cursor = if let Ok(c) =
+                            l2_provider.l2_block_info_by_number(latest - 10).await
+                        {
+                            c
+                        } else {
+                            error!(target: LOG_TARGET, "Failed to get walkback block info by number: {}", latest - 10);
+                            continue;
+                        };
+                        advance_cursor_flag = false;
+                        if let Err(e) = pipeline.reset(cursor.block_info).await {
+                            error!(target: LOG_TARGET, "Failed to reset pipeline: {:?}", e);
+                        }
+                    } else if drift > cli.drift_threshold as i64 &&
+                        timestamp as i64 > metrics::DRIFT_WALKBACK_TIMESTAMP.get() + 300
+                    {
+                        metrics::DRIFT_WALKBACK.set(cursor.block_info.number as i64);
+                        warn!(target: LOG_TARGET, "Detected drift of over {} blocks, walking back", drift);
+                        cursor = if let Ok(c) =
+                            l2_provider.l2_block_info_by_number(cursor.block_info.number - 10).await
+                        {
+                            c
+                        } else {
+                            error!(target: LOG_TARGET, "Failed to get walkback block info by number: {}", cursor.block_info.number - 10);
+                            continue;
+                        };
+                        advance_cursor_flag = false;
+                        if let Err(e) = pipeline.reset(cursor.block_info).await {
+                            error!(target: LOG_TARGET, "Failed to reset pipeline: {:?}", e);
+                        }
+
+                        metrics::DRIFT_WALKBACK_TIMESTAMP.set(timestamp as i64);
+                    }
+                }
+            }
+            Err(e) => {
+                warn!(target: LOG_TARGET, "Failed to fetch latest reference l2 safe head: {:?}", e);
+                continue; // retry the reference fetch.
+            }
+        }
         if advance_cursor_flag {
             match l2_provider.l2_block_info_by_number(cursor.block_info.number + 1).await {
                 Ok(bi) => {
                     cursor = bi;
-                    metrics::SAFE_L2_HEAD.inc();
                     advance_cursor_flag = false;
                 }
                 Err(e) => {
@@ -111,6 +183,7 @@ async fn sync(cli: cli::Cli) -> Result<()> {
                 }
             }
         }
+        info!(target: LOG_TARGET, "Stepping on cursor block number: {}", cursor.block_info.number);
         match pipeline.step(cursor).await {
             StepResult::PreparedAttributes => {
                 metrics::PIPELINE_STEPS.with_label_values(&["success"]).inc();
@@ -122,20 +195,26 @@ async fn sync(cli: cli::Cli) -> Result<()> {
             }
             StepResult::OriginAdvanceErr(e) => {
                 metrics::PIPELINE_STEPS.with_label_values(&["origin_advance_failure"]).inc();
-                error!(target: "loop", "Error advancing origin: {:?}", e);
+                warn!(target: "loop", "Could not advance origin: {:?}", e);
             }
-            StepResult::StepFailed(e) => {
-                metrics::PIPELINE_STEPS.with_label_values(&["failure"]).inc();
-                error!(target: "loop", "Error stepping derivation pipeline: {:?}", e);
-            }
+            StepResult::StepFailed(e) => match e {
+                StageError::NotEnoughData => {
+                    metrics::PIPELINE_STEPS.with_label_values(&["not_enough_data"]).inc();
+                    info!(target: "loop", "Not enough data to step derivation pipeline");
+                }
+                _ => {
+                    metrics::PIPELINE_STEPS.with_label_values(&["failure"]).inc();
+                    error!(target: "loop", "Error stepping derivation pipeline: {:?}", e);
+                }
+            },
         }
 
         // Peek at the next prepared attributes and validate them.
         if let Some(attributes) = pipeline.peek() {
             match validator.validate(attributes).await {
-                Ok(true) => info!(target: LOG_TARGET, "Validated payload attributes"),
-                Ok(false) => {
-                    error!(target: LOG_TARGET, "Failed payload validation: {}", attributes.parent.block_info.hash);
+                Ok((true, _)) => info!(target: LOG_TARGET, "Validated payload attributes"),
+                Ok((false, expected)) => {
+                    error!(target: LOG_TARGET, "Failed payload validation. Derived payload attributes: {:?}, Expected: {:?}", attributes, expected);
                     metrics::FAILED_PAYLOAD_DERIVATION.inc();
                     let _ = pipeline.next(); // Take the attributes and continue
                     continue;
@@ -161,11 +240,13 @@ async fn sync(cli: cli::Cli) -> Result<()> {
 
         // If we validated payload attributes, we should advance the cursor.
         advance_cursor_flag = true;
+        let derived = attributes.parent.block_info.number as i64 + 1;
+        metrics::SAFE_L2_HEAD.set(derived);
         metrics::DERIVED_ATTRIBUTES_COUNT.inc();
         println!(
             "Validated Payload Attributes {} [L2 Block Num: {}] [L2 Timestamp: {}] [L1 Origin Block Num: {}]",
             metrics::DERIVED_ATTRIBUTES_COUNT.get(),
-            attributes.parent.block_info.number + 1,
+            derived,
             attributes.attributes.timestamp,
             pipeline.origin().unwrap().number,
         );

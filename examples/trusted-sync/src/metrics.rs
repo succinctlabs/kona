@@ -2,10 +2,10 @@
 
 use actix_web::{get, App, HttpServer, Responder};
 use anyhow::Result;
-use prometheus::{self, opts, Encoder, GaugeVec, IntCounter, TextEncoder};
+use prometheus::{self, opts, Encoder, GaugeVec, IntCounter, IntGauge, TextEncoder};
 
 use lazy_static::lazy_static;
-use prometheus::{register_gauge_vec, register_int_counter};
+use prometheus::{register_gauge_vec, register_int_counter, register_int_gauge};
 
 lazy_static! {
     /// Tracks the starting L2 block number.
@@ -37,8 +37,27 @@ lazy_static! {
     .expect("Failed to register derived attributes count metric");
 
     /// Tracks the pending L2 safe head.
-    pub static ref SAFE_L2_HEAD: IntCounter =
-        register_int_counter!("trusted_sync_safe_l2_head", "Pending L2 safe head").expect("Failed to register safe L2 head metric");
+    pub static ref SAFE_L2_HEAD: IntGauge =
+        register_int_gauge!("trusted_sync_safe_l2_head", "Pending L2 safe head").expect("Failed to register safe L2 head metric");
+
+    /// Tracks the reference l2 head.
+    pub static ref REFERENCE_L2_HEAD: IntGauge =
+        register_int_gauge!("trusted_sync_reference_l2_head", "Reference L2 head").expect("Failed to register reference L2 head metric");
+
+    /// Tracks the block number when a drift walkback last happened.
+    pub static ref DRIFT_WALKBACK: IntGauge =
+        register_int_gauge!("trusted_sync_drift_walkback", "Latest drift walkback").expect("Failed to register drift walkback metric");
+
+    /// Tracks the timestamp of the last drift walkback.
+    pub static ref DRIFT_WALKBACK_TIMESTAMP: IntGauge =
+        register_int_gauge!("trusted_sync_drift_walkback_timestamp", "Timestamp of the last drift walkback").expect("Failed to register drift walkback timestamp metric");
+
+    /// Tracks the latest reference l2 safe head update.
+    pub static ref LATEST_REF_SAFE_HEAD_UPDATE: IntGauge = register_int_gauge!(
+        "trusted_sync_latest_ref_safe_head_update",
+        "Latest reference L2 safe head update"
+    )
+    .expect("Failed to register latest reference L2 safe head update metric");
 
     /// Tracks the number of pipeline steps.
     pub static ref PIPELINE_STEPS: GaugeVec = {
