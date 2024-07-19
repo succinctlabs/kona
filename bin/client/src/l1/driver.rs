@@ -173,12 +173,12 @@ impl<O: CommsClient + Send + Sync + Debug> DerivationDriver<O> {
         chain_provider: &mut OracleL1ChainProvider<O>,
         l2_chain_provider: &mut OracleL2ChainProvider<O>,
     ) -> Result<(BlockInfo, L2BlockInfo, Sealed<Header>)> {
-        info!(target: "client_derivation_driver", "finding startup info");
+        warn!(target: "client_derivation_driver", "finding startup info");
         // Find the initial safe head, based off of the starting L2 block number in the boot info.
         caching_oracle
             .write(&HintType::StartingL2Output.encode_with(&[boot_info.l2_output_root.as_ref()]))
             .await?;
-        info!(target: "client_derivation_driver", "wrote to oracle");
+        warn!(target: "client_derivation_driver", "wrote to oracle");
         let mut output_preimage = [0u8; 128];
         caching_oracle
             .get_exact(
@@ -187,19 +187,19 @@ impl<O: CommsClient + Send + Sync + Debug> DerivationDriver<O> {
             )
             .await?;
 
-        info!(target: "client_derivation_driver", "Found L2 output root preimage");
+        warn!(target: "client_derivation_driver", "Found L2 output root preimage");
 
         let safe_hash =
             output_preimage[96..128].try_into().map_err(|_| anyhow!("Invalid L2 output root"))?;
         let safe_header = l2_chain_provider.header_by_hash(safe_hash)?;
-        info!(target: "client_derivation_driver", "header by hash");
+        warn!(target: "client_derivation_driver", "header by hash");
         let safe_head_info = l2_chain_provider.l2_block_info_by_number(safe_header.number).await?;
-        info!(target: "client_derivation_driver", "block info by number");
+        warn!(target: "client_derivation_driver", "block info by number");
 
         let l1_origin =
             chain_provider.block_info_by_number(safe_head_info.l1_origin.number).await?;
 
-        info!(target: "client_derivation_driver", "l1 origin");
+        warn!(target: "client_derivation_driver", "l1 origin");
 
         Ok((l1_origin, safe_head_info, Sealed::new_unchecked(safe_header, safe_hash)))
     }
