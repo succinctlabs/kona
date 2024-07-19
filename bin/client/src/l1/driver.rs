@@ -173,10 +173,12 @@ impl<O: CommsClient + Send + Sync + Debug> DerivationDriver<O> {
         chain_provider: &mut OracleL1ChainProvider<O>,
         l2_chain_provider: &mut OracleL2ChainProvider<O>,
     ) -> Result<(BlockInfo, L2BlockInfo, Sealed<Header>)> {
+        info!(target: "client_derivation_driver", "finding startup info");
         // Find the initial safe head, based off of the starting L2 block number in the boot info.
         caching_oracle
             .write(&HintType::StartingL2Output.encode_with(&[boot_info.l2_output_root.as_ref()]))
             .await?;
+        info!(target: "client_derivation_driver", "wrote to oracle");
         let mut output_preimage = [0u8; 128];
         caching_oracle
             .get_exact(
