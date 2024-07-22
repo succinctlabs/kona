@@ -9,6 +9,7 @@ use alloy_provider::{Provider, ReqwestProvider};
 use alloy_rlp::Decodable;
 use alloy_rpc_types::{Block, BlockNumberOrTag, BlockTransactions, BlockTransactionsKind};
 use anyhow::{anyhow, Result};
+use async_trait::async_trait;
 use kona_client::HintType;
 use kona_derive::{
     online::{OnlineBeaconClient, OnlineBlobProvider, SimpleSlotDerivation},
@@ -20,6 +21,12 @@ use tokio::sync::RwLock;
 use tracing::trace;
 
 mod precompiles;
+
+#[async_trait]
+pub trait FetcherTrait {
+    fn hint(&mut self, hint: &str);
+    async fn get_preimage(&self, key: B256) -> Result<Vec<u8>>;
+}
 
 /// The [Fetcher] struct is responsible for fetching preimages from a remote source.
 #[derive(Debug)]
@@ -387,7 +394,7 @@ where
                 let header = Header::decode(&mut raw_header.as_ref())
                     .map_err(|e| anyhow!("Failed to decode header: {e}"))?;
 
-                    trace!(target: "fetcher", "got header");
+                trace!(target: "fetcher", "got header");
 
                 // Fetch the storage root for the L2 head block.
                 let l2_to_l1_message_passer = self
