@@ -12,14 +12,13 @@ pub mod types;
 pub mod util;
 
 pub use cli::{init_tracing_subscriber, HostCli, HostCliTrait};
-use fetcher::{Fetcher, FetcherTrait};
+use fetcher::{DefaultFetcher, Fetcher};
 use server::PreimageServer;
 
 use anyhow::{anyhow, Result};
 use command_fds::{CommandFdExt, FdMapping};
 use futures::FutureExt;
 use kona_common::FileDescriptor;
-use kona_derive::online::{OnlineBeaconClient, OnlineBlobProvider};
 use kona_preimage::{HintReader, OracleServer, PipeHandle};
 use kv::KeyValueStore;
 use std::{
@@ -92,7 +91,7 @@ pub async fn start_native_preimage_server<KV, F>(
 ) -> Result<()>
 where
     KV: KeyValueStore + Send + Sync + ?Sized + 'static,
-    F: FetcherTrait + Send + Sync + ?Sized + 'static,
+    F: Fetcher + Send + Sync + ?Sized + 'static,
 {
     let oracle_server = OracleServer::new(preimage_pipe);
     let hint_reader = HintReader::new(hint_pipe);

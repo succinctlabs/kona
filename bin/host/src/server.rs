@@ -1,7 +1,7 @@
 //! This module contains the [PreimageServer] struct and its implementation.
 
 use crate::{
-    fetcher::{Fetcher, FetcherTrait},
+    fetcher::Fetcher,
     kv::KeyValueStore,
     preimage::{
         OfflineHintRouter, OfflinePreimageFetcher, OnlineHintRouter, OnlinePreimageFetcher,
@@ -20,7 +20,7 @@ where
     P: PreimageOracleServer,
     H: HintReaderServer,
     KV: KeyValueStore + ?Sized,
-    F: FetcherTrait + ?Sized,
+    F: Fetcher + ?Sized,
 {
     /// The oracle server.
     oracle_server: P,
@@ -38,7 +38,7 @@ where
     P: PreimageOracleServer + Send + Sync + 'static,
     H: HintReaderServer + Send + Sync + 'static,
     KV: KeyValueStore + Send + Sync + ?Sized + 'static,
-    F: FetcherTrait + Send + Sync + ?Sized + 'static,
+    F: Fetcher + Send + Sync + ?Sized + 'static,
 {
     /// Create a new [PreimageServer] with the given [PreimageOracleServer],
     /// [HintReaderServer], and [KeyValueStore]. Holds onto the file descriptors for the pipes

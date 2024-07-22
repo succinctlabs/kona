@@ -22,15 +22,36 @@ use tracing::trace;
 
 mod precompiles;
 
+/// A type alias for a thread-safe fetcher.
+pub type ThreadSafeFetcher = Arc<RwLock<dyn Fetcher + Send + Sync>>;
+
+/// The [Fetcher] trait is responsible for fetching preimages from a remote source.
 #[async_trait]
-pub trait FetcherTrait {
+pub trait Fetcher {
+    /// Set the last hint to be received.
     fn hint(&mut self, hint: &str);
+
+    /// Get the preimage for the given key.
     async fn get_preimage(&self, key: B256) -> Result<Vec<u8>>;
 }
 
-/// The [Fetcher] struct is responsible for fetching preimages from a remote source.
+#[async_trait]
+impl<KV> Fetcher for DefaultFetcher<KV>
+where
+    KV: KeyValueStore + Send + Sync + ?Sized,
+{
+    fn hint(&mut self, hint: &str) {
+        self.hint(hint)
+    }
+
+    async fn get_preimage(&self, key: B256) -> Result<Vec<u8>> {
+        self.get_preimage(key).await
+    }
+}
+
+/// The [DefaultFetcher] struct is a default implementation of the [Fetcher] trait.
 #[derive(Debug)]
-pub struct Fetcher<KV>
+pub struct DefaultFetcher<KV>
 where
     KV: KeyValueStore + ?Sized,
 {
@@ -49,7 +70,7 @@ where
     last_hint: Option<String>,
 }
 
-impl<KV> Fetcher<KV>
+impl<KV> DefaultFetcher<KV>
 where
     KV: KeyValueStore + ?Sized,
 {

@@ -1,6 +1,6 @@
 //! Contains the implementations of the [HintRouter] and [PreimageFetcher] traits.]
 
-use crate::{fetcher::FetcherTrait, kv::KeyValueStore};
+use crate::{fetcher::Fetcher, kv::KeyValueStore};
 use anyhow::Result;
 use async_trait::async_trait;
 use kona_preimage::{HintRouter, PreimageFetcher, PreimageKey};
@@ -11,7 +11,7 @@ use tokio::sync::RwLock;
 #[derive(Debug)]
 pub struct OnlinePreimageFetcher<F>
 where
-    F: FetcherTrait + ?Sized,
+    F: Fetcher + ?Sized,
 {
     inner: Arc<RwLock<F>>,
 }
@@ -19,7 +19,7 @@ where
 #[async_trait]
 impl<F> PreimageFetcher for OnlinePreimageFetcher<F>
 where
-    F: FetcherTrait + Send + Sync + ?Sized,
+    F: Fetcher + Send + Sync + ?Sized,
 {
     async fn get_preimage(&self, key: PreimageKey) -> Result<Vec<u8>> {
         let fetcher = self.inner.read().await;
@@ -29,7 +29,7 @@ where
 
 impl<F> OnlinePreimageFetcher<F>
 where
-    F: FetcherTrait + ?Sized,
+    F: Fetcher + ?Sized,
 {
     /// Create a new [OnlinePreimageFetcher] from the given [Fetcher].
     pub fn new(fetcher: Arc<RwLock<F>>) -> Self {
@@ -71,7 +71,7 @@ where
 #[derive(Debug)]
 pub struct OnlineHintRouter<F>
 where
-    F: FetcherTrait + ?Sized,
+    F: Fetcher + ?Sized,
 {
     inner: Arc<RwLock<F>>,
 }
@@ -79,7 +79,7 @@ where
 #[async_trait]
 impl<F> HintRouter for OnlineHintRouter<F>
 where
-    F: FetcherTrait + Send + Sync + ?Sized,
+    F: Fetcher + Send + Sync + ?Sized,
 {
     async fn route_hint(&self, hint: String) -> Result<()> {
         let mut fetcher = self.inner.write().await;
@@ -90,7 +90,7 @@ where
 
 impl<F> OnlineHintRouter<F>
 where
-    F: FetcherTrait + ?Sized,
+    F: Fetcher + ?Sized,
 {
     /// Create a new [OnlineHintRouter] from the given [Fetcher].
     pub fn new(fetcher: Arc<RwLock<F>>) -> Self {

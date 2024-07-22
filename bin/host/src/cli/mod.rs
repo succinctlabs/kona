@@ -1,12 +1,12 @@
 //! This module contains all CLI-specific code for the host binary.
 
 use crate::{
-    fetcher::FetcherTrait,
+    fetcher::ThreadSafeFetcher,
     kv::{
         DiskKeyValueStore, LocalKeyValueStore, MemoryKeyValueStore, SharedKeyValueStore,
         SplitKeyValueStore,
     },
-    util, Fetcher,
+    util, DefaultFetcher,
 };
 use alloy_primitives::B256;
 use anyhow::{anyhow, Result};
@@ -23,14 +23,20 @@ pub(crate) use parser::parse_b256;
 mod tracing_util;
 pub use tracing_util::init_tracing_subscriber;
 
+/// A trait for the host binary CLI application arguments.
 #[async_trait]
 pub trait HostCliTrait {
+    /// Returns `true` if the host is running in offline mode.
     fn is_offline(&self) -> bool;
+
+    /// Returns the path of the client binary to execute.
     fn exec(&self) -> Option<String>;
+
+    /// Returns an instance of a [SharedKeyValueStore], accoring to the CLI arguments.
     fn construct_kv_store(&self) -> SharedKeyValueStore;
-    async fn construct_fetcher(
-        &self,
-    ) -> Result<Option<Arc<RwLock<dyn FetcherTrait + Send + Sync>>>>;
+
+    /// Returns an instance of a [ThreadSafeFetcher], according to the CLI arguments.
+    async fn construct_fetcher(&self) -> Result<Option<ThreadSafeFetcher>>;
 }
 
 /// The host binary CLI application arguments.
@@ -109,10 +115,9 @@ impl HostCliTrait for HostCli {
         kv_store
     }
 
-    async fn construct_fetcher(
-        &self,
-    ) -> Result<Option<Arc<RwLock<dyn FetcherTrait + Send + Sync>>>> {
-        let fetcher = if !self.is_offline() {
+    /// Parses the CLI arguments and returns a new instance of a [ThreadSafeFetcher].
+    async fn construct_fetcher(&self) -> Result<Option<ThreadSafeFetcher>> {
+        let fetcher: Option<ThreadSafeFetcher> = if !self.is_offline() {
             let kv_store = self.construct_kv_store();
             let beacon_client = OnlineBeaconClient::new_http(
                 self.l1_beacon_address.clone().expect("Beacon API URL must be set"),
@@ -126,7 +131,7 @@ impl HostCliTrait for HostCli {
                 util::http_provider(self.l1_node_address.as_ref().expect("Provider must be set"));
             let l2_provider =
                 util::http_provider(self.l2_node_address.as_ref().expect("Provider must be set"));
-            Some(Arc::new(RwLock::new(Fetcher::new(
+            Some(Arc::new(RwLock::new(DefaultFetcher::new(
                 kv_store,
                 l1_provider,
                 blob_provider,
