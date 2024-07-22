@@ -4,6 +4,7 @@
 use crate::{BasicKernelInterface, FileDescriptor};
 use anyhow::Result;
 use cfg_if::cfg_if;
+use tracing::info;
 
 cfg_if! {
     if #[cfg(target_arch = "mips")] {
@@ -54,6 +55,7 @@ pub fn read(fd: FileDescriptor, buf: &mut [u8]) -> Result<usize> {
 /// Exit the process with the given exit code.
 #[inline]
 pub fn exit(code: usize) -> ! {
+    info!("EXITING WITH CODE: {}", code);
     ClientIO::exit(code)
 }
 
@@ -70,6 +72,7 @@ mod native_io {
         io::{Read, Seek, SeekFrom, Write},
         os::fd::FromRawFd,
     };
+    use tracing::info;
 
     static READ_CURSOR: Lazy<Mutex<HashMap<usize, usize>>> =
         Lazy::new(|| Mutex::new(HashMap::new()));
@@ -87,6 +90,7 @@ mod native_io {
 
             let mut cursor_entry_lock = WRITE_CURSOR.lock();
             let cursor_entry = cursor_entry_lock.entry(raw_fd).or_insert(0);
+            // info!("NativeIO write. FD: {}, Cursor entry: {}", raw_fd, cursor_entry);
 
             // Reset the cursor back to before the data we just wrote for the reader's consumption.
             // This is a best-effort operation, and may not work for all file descriptors.
@@ -111,6 +115,7 @@ mod native_io {
             let n = if file.stream_position().is_ok() {
                 let mut cursor_entry_lock = READ_CURSOR.lock();
                 let cursor_entry = cursor_entry_lock.entry(raw_fd).or_insert(0);
+                // info!("NativeIO Read. FD: {}, Cursor entry: {}", raw_fd, cursor_entry);
 
                 file.seek(SeekFrom::Start(*cursor_entry as u64)).map_err(|e| {
                     anyhow!(
@@ -135,6 +140,26 @@ mod native_io {
         }
 
         fn exit(code: usize) -> ! {
+            NativeIO::write(FileDescriptor::StdOut, "RESETTING CURSORS AND EXITING".as_bytes())
+                .expect("Error writing to stdout.");
+            // write!("RESETTING CURSORS AND EXITING WITH CODE: {}", code);
+            // We also need to clean up the cursor state.
+            // Acquire locks for both static variables
+            let mut read_cursor = READ_CURSOR.lock();
+            let mut write_cursor = WRITE_CURSOR.lock();
+            for (fd, cursor) in read_cursor.iter_mut() {
+                let file = unsafe { File::from_raw_fd(*fd as i32) };
+                drop(file);
+            }
+            for (fd, cursor) in write_cursor.iter_mut() {
+                let file = unsafe { File::from_raw_fd(*fd as i32) };
+                drop(file);
+            }
+
+            // Clear the contents of both HashMaps
+            read_cursor.clear();
+            write_cursor.clear();
+
             std::process::exit(code as i32)
         }
     }

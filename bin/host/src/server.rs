@@ -11,6 +11,7 @@ use anyhow::{anyhow, Result};
 use kona_preimage::{HintReaderServer, HintRouter, PreimageFetcher, PreimageOracleServer};
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use tracing::debug;
 
 /// The [PreimageServer] is responsible for waiting for incoming preimage requests and
 /// serving them to the client.
@@ -82,6 +83,7 @@ where
             P: PreimageOracleServer,
         {
             loop {
+                debug!("Waiting for preimage request");
                 // TODO: More granular error handling. Some errors here are expected, such as the
                 // client closing the pipe, while others are not and should throw.
                 if server.next_preimage_request(fetcher).await.is_err() {
@@ -107,6 +109,7 @@ where
             H: HintReaderServer,
         {
             loop {
+                debug!("Waiting for next hint");
                 // TODO: More granular error handling. Some errors here are expected, such as the
                 // client closing the pipe, while others are not and should throw.
                 if server.next_hint(router).await.is_err() {

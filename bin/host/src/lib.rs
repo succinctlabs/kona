@@ -79,9 +79,14 @@ pub async fn start_server(cfg: HostCli) -> Result<()> {
 /// ran natively in this mode.
 pub async fn start_server_and_native_client(cfg: HostCli) -> Result<()> {
     let (preimage_pipe, hint_pipe, files) = util::create_native_pipes()?;
+    println!("Preimage pipe: {:?}", preimage_pipe);
+    println!("Hint pipe: {:?}", hint_pipe);
+    println!("Hint pipe files: {:?}", files);
+
     let kv_store = cfg.construct_kv_store();
 
     let fetcher = if !cfg.is_offline() {
+        println!("Fetcher is online");
         let beacon_client = OnlineBeaconClient::new_http(
             cfg.l1_beacon_address.clone().expect("Beacon API URL must be set"),
         );
@@ -138,6 +143,8 @@ where
     let oracle_server = OracleServer::new(preimage_pipe);
     let hint_reader = HintReader::new(hint_pipe);
 
+    println!("Starting preimage server.");
+
     let server = PreimageServer::new(oracle_server, hint_reader, kv_store, fetcher);
     AssertUnwindSafe(server.start())
         .catch_unwind()
@@ -168,6 +175,7 @@ where
 /// - `Ok(())` if the client program exits successfully.
 /// - `Err(_)` if the client program exits with a non-zero status.
 pub async fn start_native_client_program(cfg: HostCli, files: NativePipeFiles) -> Result<()> {
+    println!("Starting client program.");
     // Map the file descriptors to the standard streams and the preimage oracle and hint
     // reader's special file descriptors.
     let mut command =

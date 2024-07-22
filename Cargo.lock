@@ -2171,6 +2171,7 @@ dependencies = [
  "cfg-if",
  "linked_list_allocator",
  "spin",
+ "tracing",
 ]
 
 [[package]]

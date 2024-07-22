@@ -3,7 +3,7 @@ use crate::{
 };
 use alloc::{boxed::Box, vec::Vec};
 use anyhow::{bail, Result};
-use tracing::trace;
+use tracing::{info, trace};
 
 /// An [OracleReader] is a high-level interface to the preimage oracle.
 #[derive(Debug, Clone, Copy)]
@@ -23,7 +23,9 @@ impl OracleReader {
     async fn write_key(&self, key: PreimageKey) -> Result<usize> {
         // Write the key to the host so that it can prepare the preimage.
         let key_bytes: [u8; 32] = key.into();
+        kona_common::io::print("self.pipe_handle.write\n");
         self.pipe_handle.write(&key_bytes).await?;
+        kona_common::io::print("self.pipe_handle.read\n");
 
         // Read the length prefix and reset the cursor.
         let mut length_buffer = [0u8; 8];
@@ -60,6 +62,7 @@ impl PreimageOracleClient for OracleReader {
     /// Get the data corresponding to the currently set key from the host. Write the data into the
     /// provided buffer
     async fn get_exact(&self, key: PreimageKey, buf: &mut [u8]) -> Result<()> {
+        kona_common::io::print("getting preimage for key oracle_reader.get_exact\n");
         trace!(target: "oracle_client", "Requesting data from preimage oracle. Key {key}");
 
         // Write the key to the host and read the length of the preimage.
@@ -69,6 +72,7 @@ impl PreimageOracleClient for OracleReader {
 
         // Ensure the buffer is the correct size.
         if buf.len() != length {
+            info!("key: {:?}, buf: {:?}, length: {:?}", key, buf, length);
             bail!("Buffer size {} does not match preimage size {}", buf.len(), length);
         }
 

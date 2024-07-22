@@ -24,6 +24,7 @@ impl LocalKeyValueStore {
 
 impl KeyValueStore for LocalKeyValueStore {
     fn get(&self, key: B256) -> Option<Vec<u8>> {
+        println!("Getting from local store: {:?}", key);
         let preimage_key = PreimageKey::try_from(*key).ok()?;
         match preimage_key.key_value() {
             L1_HEAD_KEY => Some(self.cfg.l1_head.to_vec()),

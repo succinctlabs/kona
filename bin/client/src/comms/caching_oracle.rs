@@ -11,6 +11,7 @@ use core::num::NonZeroUsize;
 use kona_preimage::{HintWriterClient, PreimageKey, PreimageOracleClient};
 use lru::LruCache;
 use spin::Mutex;
+use tracing::{info, trace};
 
 /// A wrapper around an [OracleReader] that stores a configurable number of responses in an
 /// [LruCache] for quick retrieval.
@@ -50,6 +51,8 @@ impl PreimageOracleClient for CachingOracle {
     }
 
     async fn get_exact(&self, key: PreimageKey, buf: &mut [u8]) -> Result<()> {
+        trace!(target: "client_oracle", "Fetching preimage for key {key}");
+        kona_common::io::print("getting preimage for key\n");
         let mut cache_lock = self.cache.lock();
         if let Some(value) = cache_lock.get(&key) {
             // SAFETY: The value never enters the cache unless the preimage length matches the
@@ -57,6 +60,7 @@ impl PreimageOracleClient for CachingOracle {
             buf.copy_from_slice(value.as_slice());
             Ok(())
         } else {
+            kona_common::io::print("oracle reader\n");
             ORACLE_READER.get_exact(key, buf).await?;
             cache_lock.put(key, buf.to_vec());
             Ok(())
