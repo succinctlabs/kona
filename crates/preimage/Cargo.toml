@@ -17,7 +17,7 @@ alloy-primitives.workspace = true
 async-trait.workspace = true
 
 # local
-kona-common = { path = "../common", version = "0.0.2" }
+kona-common = { path = "../common", version = "0.0.2", default-features = false }
 rkyv = { version = "0.7.44", optional = true }
 serde = { version = "1.0.203", features = ["derive"], optional = true }
 
