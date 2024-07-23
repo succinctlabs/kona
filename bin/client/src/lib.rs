@@ -13,7 +13,9 @@ pub mod l2;
 pub mod hint;
 pub use hint::HintType;
 
+#[cfg(feature = "io")]
 mod comms;
+#[cfg(feature = "io")]
 pub use comms::{CachingOracle, HINT_WRITER, ORACLE_READER};
 
 mod boot;
