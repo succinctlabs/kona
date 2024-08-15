@@ -4,7 +4,7 @@
 use crate::{kv::KeyValueStore, util};
 use alloy_consensus::{Header, TxEnvelope};
 use alloy_eips::{eip2718::Encodable2718, eip4844::FIELD_ELEMENTS_PER_BLOB, BlockId};
-use alloy_primitives::{address, keccak256, Address, Bytes, B256};
+use alloy_primitives::{address, bytes, keccak256, Address, Bytes, B256};
 use alloy_provider::{Provider, ReqwestProvider};
 use alloy_rlp::Decodable;
 use alloy_rpc_types::{Block, BlockNumberOrTag, BlockTransactions, BlockTransactionsKind};
@@ -76,6 +76,10 @@ where
 
         // Use a loop to keep retrying the prefetch as long as the key is not found
         while preimage.is_none() && self.last_hint.is_some() {
+            if *key == **bytes!("026405ca4175974db9494bdb1883861f1fc0be463fab6b358cb505af37c19a8d")
+            {
+                println!("Accessed the broken key!");
+            }
             let hint = self.last_hint.as_ref().expect("Cannot be None");
             self.prefetch(hint).await?;
 
