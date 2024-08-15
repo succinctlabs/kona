@@ -56,7 +56,9 @@ pub(crate) fn parse_hint(s: &str) -> Result<(HintType, Bytes)> {
 /// Returns an HTTP provider for the given URL.
 pub(crate) fn http_provider(url: &str) -> ReqwestProvider {
     let url = url.parse().unwrap();
-    let http = Http::<Client>::new(url);
+    // Provider with 10 second timeout.
+    let client = Client::builder().timeout(std::time::Duration::from_secs(10)).build().unwrap();
+    let http = Http::with_client(client, url);
     ReqwestProvider::new(RpcClient::new(http, true))
 }
 

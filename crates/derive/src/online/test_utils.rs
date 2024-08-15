@@ -28,7 +28,9 @@ pub fn anvil_http_provider(anvil: &AnvilInstance) -> ReqwestProvider<Ethereum> {
 /// Returns an HTTP provider for the given URL.
 pub fn http_provider(url: &str) -> ReqwestProvider<Ethereum> {
     let url = url.parse().unwrap();
-    let http = Http::<Client>::new(url);
+    // Provider with 10 second timeout.
+    let client = Client::builder().timeout(std::time::Duration::from_secs(10)).build().unwrap();
+    let http = Http::with_client(client, url);
     ReqwestProvider::new(RpcClient::new(http, true))
 }
 
