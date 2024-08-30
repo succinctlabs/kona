@@ -15,7 +15,7 @@ use kona_client::HintType;
 use kona_derive::online::{OnlineBeaconClient, OnlineBlobProvider, SimpleSlotDerivation};
 use kona_preimage::{PreimageKey, PreimageKeyType};
 use kona_primitives::{BlockInfo, IndexedBlobHash};
-use std::sync::Arc;
+use std::{sync::Arc, thread::sleep, time::Duration};
 use tokio::sync::RwLock;
 use tracing::trace;
 
@@ -80,8 +80,9 @@ where
         let mut retries = 0;
         while preimage.is_none() && self.last_hint.is_some() {
             if retries >= MAX_RETRIES {
-                tracing::error!(target: "fetcher", "Max retries exceeded.");
-                anyhow::bail!("Max retries exceeded.");
+                tracing::info!(target: "fetcher", "Max retries exceeded");
+                tracing::error!(target: "fetcher", "Max retries exceeded WHAT IS HAPPENING.");
+                anyhow::bail!("Max retries exceeded WHAT.");
             }
 
             let hint = self.last_hint.as_ref().expect("Cannot be None");
@@ -91,6 +92,8 @@ where
             preimage = kv_lock.get(key);
 
             retries += 1;
+            println!("Retries: {} for key: {}", retries, key);
+            sleep(Duration::from_millis(100));
         }
 
         preimage.ok_or_else(|| anyhow!("Preimage not found."))
