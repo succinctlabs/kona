@@ -9,7 +9,7 @@ use std::collections::HashMap;
 /// development purposes.
 #[derive(Default, Clone, Debug, Eq, PartialEq)]
 pub struct MemoryKeyValueStore {
-    pub store: HashMap<B256, Vec<u8>>,
+    pub store: HashMap<[u8; 32], Vec<u8>>,
 }
 
 impl MemoryKeyValueStore {
@@ -21,11 +21,11 @@ impl MemoryKeyValueStore {
 
 impl KeyValueStore for MemoryKeyValueStore {
     fn get(&self, key: B256) -> Option<Vec<u8>> {
-        self.store.get(&key).cloned()
+        self.store.get(&key.0).cloned()
     }
 
     fn set(&mut self, key: B256, value: Vec<u8>) -> Result<()> {
-        self.store.insert(key, value);
+        self.store.insert(key.0, value);
         Ok(())
     }
 }
