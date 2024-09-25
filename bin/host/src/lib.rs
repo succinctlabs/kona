@@ -27,12 +27,8 @@ use std::{
     panic::AssertUnwindSafe,
     process::Command,
     sync::Arc,
-    time::Duration,
 };
-use tokio::{
-    sync::RwLock,
-    task::{self, JoinHandle},
-};
+use tokio::{sync::RwLock, task};
 use tracing::{debug, error, info};
 use util::Pipe;
 
@@ -229,27 +225,10 @@ pub async fn start_native_client_program(
         ])
         .expect("No errors may occur when mapping file descriptors.");
 
-    let mut child = command.spawn().map_err(|e| {
-        error!(target: "client_program", "Failed to spawn client program: {:?}", e);
-        anyhow!("Failed to spawn client program: {:?}", e)
+    let status = command.status().map_err(|e| {
+        error!(target: "client_program", "Failed to execute client program: {:?}", e);
+        anyhow!("Failed to execute client program: {:?}", e)
     })?;
-
-    info!("NEW CLIENT PROGRAM PID: {:?}", child.id());
-
-    let status = child.wait();
-
-    let status = status.unwrap();
-
-    info!("CLIENT PROGRAM STATUS: {:?}", status);
-
-    // if let Err(e) = status {
-    //     error!(target: "client_program", "Failed to execute client program: {:?}", e);
-    //     return Err(anyhow!("Failed to execute client program: {:?}", e));
-    // }
-
-    // let status = status.unwrap();
-
-    info!("CLIENT PROGRAM EXITED WITH STATUS: {:?}", status);
 
     status.code().ok_or_else(|| anyhow!("Client program was killed by a signal."))
 }
