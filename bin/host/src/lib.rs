@@ -121,7 +121,6 @@ pub async fn start_server_and_native_client(cfg: HostCli) -> Result<i32> {
             debug!(target: "kona_host", "Client program has exited with status {exit_status}.");
         }
     );
-
     debug!(target: "kona_host", "Client program has exited with status {exit_status}.");
     info!(target: "kona_host", "Preimage server and client program have joined.");
 
