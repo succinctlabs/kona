@@ -29,13 +29,14 @@ pub use channel_bank::{ChannelBank, ChannelBankProvider};
 mod channel_reader;
 pub use channel_reader::{ChannelReader, ChannelReaderProvider};
 
+mod batch_stream;
+pub use batch_stream::{BatchStream, BatchStreamProvider};
+
 mod batch_queue;
 pub use batch_queue::{BatchQueue, BatchQueueProvider};
 
 mod attributes_queue;
-pub use attributes_queue::{
-    AttributesBuilder, AttributesProvider, AttributesQueue, StatefulAttributesBuilder,
-};
+pub use attributes_queue::{AttributesProvider, AttributesQueue};
 
 mod utils;
 pub use utils::decompress_brotli;

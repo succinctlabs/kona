@@ -1,22 +1,14 @@
-//! Contains an online implementation of the [BlobProvider] trait.
+//! Contains an online implementation of the `BlobProvider` trait.
 
-use crate::{
-    ensure,
-    errors::BlobProviderError,
-    online::{BeaconClient, OnlineBeaconClient},
-    traits::BlobProvider,
-};
-use alloc::{
-    boxed::Box,
-    string::{String, ToString},
-    vec::Vec,
-};
 use alloy_eips::eip4844::Blob;
 use async_trait::async_trait;
 use core::marker::PhantomData;
+use kona_derive::{errors::BlobProviderError, traits::BlobProvider};
 use kona_primitives::{APIBlobSidecar, BlobSidecar, IndexedBlobHash};
 use op_alloy_protocol::BlockInfo;
 use tracing::warn;
+
+use crate::{BeaconClient, OnlineBeaconClient};
 
 /// Specifies the derivation of a slot from a timestamp.
 pub trait SlotDerivation {
@@ -43,7 +35,11 @@ impl<B: BeaconClient, S: SlotDerivation> OnlineBlobProvider<B, S> {
     /// The `genesis_time` and `slot_interval` arguments are _optional_ and the
     /// [OnlineBlobProvider] will attempt to load them dynamically at runtime if they are not
     /// provided.
-    pub fn new(beacon_client: B, genesis_time: Option<u64>, slot_interval: Option<u64>) -> Self {
+    pub const fn new(
+        beacon_client: B,
+        genesis_time: Option<u64>,
+        slot_interval: Option<u64>,
+    ) -> Self {
         Self { beacon_client, genesis_time, slot_interval, _slot_derivation: PhantomData }
     }
 
@@ -126,7 +122,7 @@ pub struct SimpleSlotDerivation;
 
 impl SlotDerivation for SimpleSlotDerivation {
     fn slot(genesis: u64, slot_time: u64, timestamp: u64) -> Result<u64, BlobProviderError> {
-        ensure!(timestamp >= genesis, BlobProviderError::SlotDerivation);
+        crate::ensure!(timestamp >= genesis, BlobProviderError::SlotDerivation);
         Ok((timestamp - genesis) / slot_time)
     }
 }
@@ -252,7 +248,7 @@ impl<B: BeaconClient, F: BlobSidecarProvider, S: SlotDerivation>
 {
     /// Creates a new instance of the [OnlineBlobProviderWithFallback] with the
     /// specified primary and fallback providers.
-    pub fn new(primary: OnlineBlobProvider<B, S>, fallback: Option<F>) -> Self {
+    pub const fn new(primary: OnlineBlobProvider<B, S>, fallback: Option<F>) -> Self {
         Self { primary, fallback, _slot_derivation: PhantomData }
     }
 
@@ -416,13 +412,13 @@ impl<B: BeaconClient, F: BlobSidecarProvider, S: SlotDerivation>
     }
 
     /// Adds a genesis time to the builder. This is optional.
-    pub fn with_genesis_time(mut self, genesis_time: u64) -> Self {
+    pub const fn with_genesis_time(mut self, genesis_time: u64) -> Self {
         self.genesis_time = Some(genesis_time);
         self
     }
 
     /// Adds a slot interval to the builder. This is optional.
-    pub fn with_slot_interval(mut self, slot_interval: u64) -> Self {
+    pub const fn with_slot_interval(mut self, slot_interval: u64) -> Self {
         self.slot_interval = Some(slot_interval);
         self
     }
@@ -477,8 +473,7 @@ impl<B: BeaconClient, F: BlobSidecarProvider, S: SlotDerivation>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::online::test_utils::MockBeaconClient;
-    use alloc::vec;
+    use crate::test_utils::MockBeaconClient;
     use alloy_primitives::b256;
     use kona_primitives::{APIConfigResponse, APIGenesisResponse, APIGetBlobSidecarsResponse};
 

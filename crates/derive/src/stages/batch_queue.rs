@@ -22,7 +22,15 @@ pub trait BatchQueueProvider {
     /// complete and the batch has been consumed, an [PipelineError::Eof] error is returned.
     ///
     /// [ChannelReader]: crate::stages::ChannelReader
-    async fn next_batch(&mut self) -> PipelineResult<Batch>;
+    async fn next_batch(
+        &mut self,
+        parent: L2BlockInfo,
+        l1_origins: &[BlockInfo],
+    ) -> PipelineResult<Batch>;
+
+    /// Allows the [BatchQueue] to flush the buffer in the [crate::stages::BatchStream]
+    /// if an invalid single batch is found. Pre-holocene hardfork, this will be a no-op.
+    fn flush(&mut self);
 }
 
 /// [BatchQueue] is responsible for o rdering unordered batches
@@ -146,6 +154,9 @@ where
                     remaining.push(batch.clone());
                 }
                 BatchValidity::Drop => {
+                    // If we drop a batch, flush previous batches buffered in the BatchStream
+                    // stage.
+                    self.prev.flush();
                     warn!(target: "batch-queue", "Dropping batch with parent: {}", parent.block_info);
                     continue;
                 }
@@ -233,6 +244,7 @@ where
         let data = BatchWithInclusionBlock { inclusion_block: origin, batch };
         // If we drop the batch, validation logs the drop reason with WARN level.
         if data.check_batch(&self.cfg, &self.l1_blocks, parent, &mut self.fetcher).await.is_drop() {
+            self.prev.flush();
             return Ok(());
         }
         self.batches.push(data);
@@ -328,7 +340,7 @@ where
 
         // Load more data into the batch queue.
         let mut out_of_data = false;
-        match self.prev.next_batch().await {
+        match self.prev.next_batch(parent, &self.l1_blocks).await {
             Ok(b) => {
                 if !origin_behind {
                     self.add_batch(b, parent).await.ok();

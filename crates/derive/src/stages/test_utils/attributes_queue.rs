@@ -3,8 +3,8 @@
 use crate::{
     batch::SingleBatch,
     errors::{BuilderError, PipelineError, PipelineErrorKind, PipelineResult},
-    stages::attributes_queue::{AttributesBuilder, AttributesProvider},
-    traits::{OriginAdvancer, OriginProvider, ResettableStage},
+    stages::attributes_queue::AttributesProvider,
+    traits::{AttributesBuilder, OriginAdvancer, OriginProvider, ResettableStage},
 };
 use alloc::{boxed::Box, string::ToString, vec::Vec};
 use alloy_eips::BlockNumHash;
@@ -79,7 +79,7 @@ impl AttributesProvider for MockAttributesProvider {
 }
 
 /// Creates a new [`MockAttributesProvider`] with the given origin and batches.
-pub fn new_attributes_provider(
+pub const fn new_attributes_provider(
     origin: Option<BlockInfo>,
     batches: Vec<PipelineResult<SingleBatch>>,
 ) -> MockAttributesProvider {

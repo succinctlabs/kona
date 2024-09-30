@@ -1,17 +1,21 @@
-//! Contains online pipeline types.
+//! Helper to construct a [DerivationPipeline] using online types.
 
-use super::{
-    AlloyChainProvider, AlloyL2ChainProvider, DerivationPipeline, EthereumDataSource,
-    OnlineBeaconClient, OnlineBlobProviderWithFallback, PipelineBuilder, SimpleSlotDerivation,
-    StatefulAttributesBuilder,
+use kona_derive::{
+    attributes::StatefulAttributesBuilder,
+    pipeline::{DerivationPipeline, PipelineBuilder},
+    sources::EthereumDataSource,
+    stages::{
+        AttributesQueue, BatchQueue, BatchStream, ChannelBank, ChannelReader, FrameQueue,
+        L1Retrieval, L1Traversal,
+    },
 };
-use alloc::sync::Arc;
 use op_alloy_genesis::RollupConfig;
 use op_alloy_protocol::BlockInfo;
+use std::sync::Arc;
 
-// Pipeline internal stages aren't re-exported at the module-level.
-use crate::stages::{
-    AttributesQueue, BatchQueue, ChannelBank, ChannelReader, FrameQueue, L1Retrieval, L1Traversal,
+use crate::{
+    AlloyChainProvider, AlloyL2ChainProvider, OnlineBeaconClient, OnlineBlobProviderWithFallback,
+    SimpleSlotDerivation,
 };
 
 /// An online derivation pipeline.
@@ -32,7 +36,11 @@ pub type OnlineAttributesBuilder =
 /// An `online` attributes queue for the derivation pipeline.
 pub type OnlineAttributesQueue<DAP> = AttributesQueue<
     BatchQueue<
-        ChannelReader<ChannelBank<FrameQueue<L1Retrieval<DAP, L1Traversal<AlloyChainProvider>>>>>,
+        BatchStream<
+            ChannelReader<
+                ChannelBank<FrameQueue<L1Retrieval<DAP, L1Traversal<AlloyChainProvider>>>>,
+            >,
+        >,
         AlloyL2ChainProvider,
     >,
     OnlineAttributesBuilder,

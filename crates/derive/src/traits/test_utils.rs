@@ -10,11 +10,10 @@ use crate::{
 use alloc::{boxed::Box, sync::Arc, vec, vec::Vec};
 use alloy_consensus::{Header, Receipt, TxEnvelope};
 use alloy_eips::eip4844::Blob;
-use alloy_primitives::{Address, Bytes, B256};
+use alloy_primitives::{map::HashMap, Address, Bytes, B256};
 use anyhow::Result;
 use async_trait::async_trait;
 use core::fmt::Debug;
-use hashbrown::HashMap;
 use kona_primitives::IndexedBlobHash;
 use op_alloy_genesis::{RollupConfig, SystemConfig};
 use op_alloy_protocol::{BlockInfo, L2BlockInfo};
@@ -56,10 +55,7 @@ impl DataAvailabilityProvider for TestDAP {
         let results = self
             .results
             .iter()
-            .map(|i| match i {
-                Ok(r) => Ok(r.clone()),
-                Err(_) => Err(PipelineError::Eof.temp()),
-            })
+            .map(|i| i.as_ref().map_or_else(|_| Err(PipelineError::Eof.temp()), |r| Ok(r.clone())))
             .collect::<Vec<PipelineResult<Bytes>>>();
         Ok(TestIter { open_data_calls: vec![(*block_ref, self.batch_inbox_address)], results })
     }
@@ -229,7 +225,7 @@ pub struct TestL2ChainProvider {
 
 impl TestL2ChainProvider {
     /// Creates a new [MockBlockFetcher] with the given origin and batches.
-    pub fn new(
+    pub const fn new(
         blocks: Vec<L2BlockInfo>,
         op_blocks: Vec<OpBlock>,
         system_configs: HashMap<u64, SystemConfig>,

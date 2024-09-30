@@ -2,18 +2,22 @@
 
 use crate::{
     errors::{PipelineError, PipelineErrorKind, PipelineResult},
-    params::MAX_CHANNEL_BANK_SIZE,
     stages::ChannelReaderProvider,
     traits::{OriginAdvancer, OriginProvider, ResettableStage},
 };
 use alloc::{boxed::Box, collections::VecDeque, sync::Arc};
-use alloy_primitives::{hex, Bytes};
+use alloy_primitives::{hex, map::HashMap, Bytes};
 use async_trait::async_trait;
 use core::fmt::Debug;
-use hashbrown::HashMap;
 use op_alloy_genesis::{RollupConfig, SystemConfig};
 use op_alloy_protocol::{BlockInfo, Channel, ChannelId, Frame};
 use tracing::{trace, warn};
+
+/// The maximum size of a channel bank.
+pub(crate) const MAX_CHANNEL_BANK_SIZE: usize = 100_000_000;
+
+/// The maximum size of a channel bank after the Fjord Hardfork.
+pub(crate) const FJORD_MAX_CHANNEL_BANK_SIZE: usize = 1_000_000_000;
 
 /// Provides frames for the [ChannelBank] stage.
 #[async_trait]
@@ -41,13 +45,13 @@ where
     P: ChannelBankProvider + OriginAdvancer + OriginProvider + ResettableStage + Debug,
 {
     /// The rollup configuration.
-    cfg: Arc<RollupConfig>,
+    pub cfg: Arc<RollupConfig>,
     /// Map of channels by ID.
-    channels: HashMap<ChannelId, Channel>,
+    pub channels: HashMap<ChannelId, Channel>,
     /// Channels in FIFO order.
-    channel_queue: VecDeque<ChannelId>,
+    pub channel_queue: VecDeque<ChannelId>,
     /// The previous stage of the derivation pipeline.
-    prev: P,
+    pub prev: P,
 }
 
 impl<P> ChannelBank<P>
@@ -65,11 +69,17 @@ where
         self.channels.iter().fold(0, |acc, (_, c)| acc + c.size())
     }
 
-    /// Prunes the Channel bank, until it is below [MAX_CHANNEL_BANK_SIZE].
+    /// Prunes the Channel bank, until it is below the max channel bank size.
     /// Prunes from the high-priority channel since it failed to be read.
     pub fn prune(&mut self) -> PipelineResult<()> {
         let mut total_size = self.size();
-        while total_size > MAX_CHANNEL_BANK_SIZE {
+        let origin = self.origin().ok_or(PipelineError::MissingOrigin.crit())?;
+        let max_channel_bank_size = if self.cfg.is_fjord_active(origin.timestamp) {
+            FJORD_MAX_CHANNEL_BANK_SIZE
+        } else {
+            MAX_CHANNEL_BANK_SIZE
+        };
+        while total_size > max_channel_bank_size {
             let id =
                 self.channel_queue.pop_front().ok_or(PipelineError::ChannelBankEmpty.crit())?;
             let channel = self.channels.remove(&id).ok_or(PipelineError::ChannelNotFound.crit())?;
@@ -83,11 +93,25 @@ where
         let origin = self.origin().ok_or(PipelineError::MissingOrigin.crit())?;
 
         // Get the channel for the frame, or create a new one if it doesn't exist.
-        let current_channel = self.channels.entry(frame.id).or_insert_with(|| {
-            let channel = Channel::new(frame.id, origin);
-            self.channel_queue.push_back(frame.id);
-            channel
-        });
+        let current_channel = match self.channels.get_mut(&frame.id) {
+            Some(c) => c,
+            None => {
+                if self.cfg.is_holocene_active(origin.timestamp) && !self.channel_queue.is_empty() {
+                    // In holocene, channels are strictly ordered.
+                    // If the previous frame is not the last in the channel
+                    // and a starting frame for the next channel arrives,
+                    // the previous channel/frames are removed and a new channel is created.
+                    self.channel_queue.clear();
+
+                    trace!(target: "channel-bank", "[holocene active] clearing non-empty channel queue");
+                    crate::inc!(CHANNEL_QUEUE_NON_EMPTY);
+                }
+                let channel = Channel::new(frame.id, origin);
+                self.channel_queue.push_back(frame.id);
+                self.channels.insert(frame.id, channel);
+                self.channels.get_mut(&frame.id).expect("Channel must be in queue")
+            }
+        };
 
         // Check if the channel is not timed out. If it has, ignore the frame.
         if current_channel.open_block_number() + self.cfg.channel_timeout(origin.timestamp) <
@@ -114,7 +138,7 @@ where
         {
             // For each channel, get the number of frames and record it in the CHANNEL_FRAME_COUNT
             // histogram metric.
-            for (_, channel) in &self.channels {
+            for channel in self.channels.values() {
                 crate::observe!(CHANNEL_FRAME_COUNT, channel.len() as f64);
             }
         }
@@ -169,10 +193,7 @@ where
 
         let channel_data =
             (0..self.channel_queue.len()).find_map(|i| self.try_read_channel_at_index(i).ok());
-        match channel_data {
-            Some(data) => Ok(Some(data)),
-            None => Err(PipelineError::Eof.temp()),
-        }
+        channel_data.map_or_else(|| Err(PipelineError::Eof.temp()), |data| Ok(Some(data)))
     }
 
     /// Attempts to read the channel at the specified index. If the channel is not ready or timed
@@ -313,10 +334,34 @@ mod tests {
     }
 
     #[test]
+    fn test_holocene_ingest_new_channel_unclosed() {
+        let frames = [
+            // -- First Channel --
+            Frame { id: [0xEE; 16], number: 0, data: vec![0xDD; 50], is_last: false },
+            Frame { id: [0xEE; 16], number: 1, data: vec![0xDD; 50], is_last: false },
+            Frame { id: [0xEE; 16], number: 2, data: vec![0xDD; 50], is_last: false },
+            // -- Second Channel --
+            Frame { id: [0xFF; 16], number: 0, data: vec![0xDD; 50], is_last: false },
+        ];
+        let mock = MockChannelBankProvider::new(vec![]);
+        let rollup_config = RollupConfig { holocene_time: Some(0), ..Default::default() };
+        let mut channel_bank = ChannelBank::new(Arc::new(rollup_config), mock);
+        for frame in frames.iter().take(3) {
+            channel_bank.ingest_frame(frame.clone()).unwrap();
+        }
+        assert_eq!(channel_bank.channel_queue.len(), 1);
+        assert_eq!(channel_bank.channel_queue[0], [0xEE; 16]);
+        // When we ingest the next frame, channel queue will be cleared since the previous
+        // channel is not closed. This is invalid by Holocene rules.
+        channel_bank.ingest_frame(frames[3].clone()).unwrap();
+        assert_eq!(channel_bank.channel_queue.len(), 1);
+        assert_eq!(channel_bank.channel_queue[0], [0xFF; 16]);
+    }
+
+    #[test]
     fn test_ingest_and_prune_channel_bank() {
         use alloc::vec::Vec;
         let mut frames: Vec<Frame> = new_test_frames(100000);
-        // let data = frames.iter().map(|f| Ok(f)).collect::<Vec<StageResult<Frame>>>();
         let mock = MockChannelBankProvider::new(vec![]);
         let cfg = Arc::new(RollupConfig::default());
         let mut channel_bank = ChannelBank::new(cfg, mock);
@@ -329,6 +374,32 @@ mod tests {
             let next_frame = frames.pop().unwrap();
             channel_bank.ingest_frame(next_frame).unwrap();
             assert!(channel_bank.size() <= MAX_CHANNEL_BANK_SIZE);
+        }
+        // There should be a bunch of frames leftover
+        assert!(!frames.is_empty());
+        // If we ingest one more frame, the channel bank should prune
+        // and the size should be the same
+        let next_frame = frames.pop().unwrap();
+        channel_bank.ingest_frame(next_frame).unwrap();
+        assert_eq!(channel_bank.size(), current_size);
+    }
+
+    #[test]
+    fn test_ingest_and_prune_channel_bank_fjord() {
+        use alloc::vec::Vec;
+        let mut frames: Vec<Frame> = new_test_frames(100000);
+        let mock = MockChannelBankProvider::new(vec![]);
+        let cfg = Arc::new(RollupConfig { fjord_time: Some(0), ..Default::default() });
+        let mut channel_bank = ChannelBank::new(cfg, mock);
+        // Ingest frames until the channel bank is full and it stops increasing in size
+        let mut current_size = 0;
+        let next_frame = frames.pop().unwrap();
+        channel_bank.ingest_frame(next_frame).unwrap();
+        while channel_bank.size() > current_size {
+            current_size = channel_bank.size();
+            let next_frame = frames.pop().unwrap();
+            channel_bank.ingest_frame(next_frame).unwrap();
+            assert!(channel_bank.size() <= FJORD_MAX_CHANNEL_BANK_SIZE);
         }
         // There should be a bunch of frames leftover
         assert!(!frames.is_empty());

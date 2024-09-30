@@ -2,6 +2,7 @@ set positional-arguments
 alias t := tests
 alias la := lint-all
 alias l := lint-native
+alias lint := lint-native
 alias f := fmt-native-fix
 alias b := build
 alias d := docker-build-ts
@@ -12,16 +13,16 @@ alias h := hack
 default:
   @just --list
 
-# Run all tests
+# Run all tests (excluding online tests)
 tests: test test-docs
 
-# Runs `cargo hack check` against the workspace
-hack:
-  cargo hack check --feature-powerset --no-dev-deps
+# Test for the native target with all features. By default, excludes online tests.
+test *args="-E '!test(test_online)'":
+  cargo nextest run --workspace --all --all-features {{args}}
 
-# Test for the native target with all features
-test *args='':
-  cargo nextest run --workspace --all --all-features $@
+# Run all online tests
+test-online:
+  just test "-E 'test(test_online)'"
 
 # Run action tests for the client program on the native target
 action-tests test_name='Test_ProgramAction':
@@ -54,6 +55,10 @@ clean-actions:
 
 # Lint the workspace for all available targets
 lint-all: lint-native lint-cannon lint-asterisc lint-docs
+
+# Runs `cargo hack check` against the workspace
+hack:
+  cargo hack check --feature-powerset --no-dev-deps
 
 # Fixes the formatting of the workspace
 fmt-native-fix:
@@ -107,7 +112,7 @@ build-cannon *args='':
     --platform linux/amd64 \
     -v `pwd`/:/workdir \
     -w="/workdir" \
-    ghcr.io/anton-rs/kona/cannon-builder:main cargo build --workspace -Zbuild-std=core,alloc $@ --exclude kona-host --exclude trusted-sync
+    ghcr.io/anton-rs/kona/cannon-builder:main cargo build --workspace -Zbuild-std=core,alloc $@ --exclude kona-host --exclude trusted-sync --exclude kona-providers-alloy
 
 # Build for the `asterisc` target. Any crates that require the stdlib are excluded from the build for this target.
 build-asterisc *args='':
@@ -116,7 +121,7 @@ build-asterisc *args='':
     --platform linux/amd64 \
     -v `pwd`/:/workdir \
     -w="/workdir" \
-    ghcr.io/anton-rs/kona/asterisc-builder:main cargo build --workspace -Zbuild-std=core,alloc $@ --exclude kona-host --exclude trusted-sync
+    ghcr.io/anton-rs/kona/asterisc-builder:main cargo build --workspace -Zbuild-std=core,alloc $@ --exclude kona-host --exclude trusted-sync --exclude kona-providers-alloy
 
 # Build the `trusted-sync` docker image
 docker-build-ts *args='':

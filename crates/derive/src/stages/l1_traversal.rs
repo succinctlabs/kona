@@ -63,7 +63,7 @@ impl<F: ChainProvider> L1Traversal<F> {
     }
 
     /// Retrieves a reference to the inner data source of the [L1Traversal] stage.
-    pub fn data_source(&self) -> &F {
+    pub const fn data_source(&self) -> &F {
         &self.data_source
     }
 }
@@ -108,8 +108,20 @@ impl<F: ChainProvider + Send> OriginAdvancer for L1Traversal<F> {
         }
 
         crate::set!(ORIGIN_GAUGE, next_l1_origin.number as i64);
+
+        let prev_block_holocene = self.rollup_config.is_holocene_active(block.timestamp);
+        let next_block_holocene = self.rollup_config.is_holocene_active(next_l1_origin.timestamp);
+
+        // Update the block origin regardless of if a holocene activation is required.
         self.block = Some(next_l1_origin);
         self.done = false;
+
+        // If the prev block is not holocene, but the next is, we need to flag this
+        // so the pipeline driver will reset the pipeline for holocene activation.
+        if !prev_block_holocene && next_block_holocene {
+            return Err(ResetError::HoloceneActivation.reset());
+        }
+
         Ok(())
     }
 }
@@ -134,27 +146,22 @@ impl<F: ChainProvider + Send> ResettableStage for L1Traversal<F> {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
-    use crate::{
-        errors::PipelineErrorKind,
-        params::{CONFIG_UPDATE_EVENT_VERSION_0, CONFIG_UPDATE_TOPIC},
-        traits::test_utils::TestChainProvider,
-    };
+    use crate::{errors::PipelineErrorKind, traits::test_utils::TestChainProvider};
     use alloc::vec;
     use alloy_consensus::Receipt;
     use alloy_primitives::{address, b256, hex, Bytes, Log, LogData, B256};
+    use op_alloy_genesis::system::{CONFIG_UPDATE_EVENT_VERSION_0, CONFIG_UPDATE_TOPIC};
 
     const L1_SYS_CONFIG_ADDR: Address = address!("1337000000000000000000000000000000000000");
 
     fn new_update_batcher_log() -> Log {
-        const UPDATE_TYPE: B256 =
-            b256!("0000000000000000000000000000000000000000000000000000000000000000");
         Log {
             address: L1_SYS_CONFIG_ADDR,
             data: LogData::new_unchecked(
                 vec![
                     CONFIG_UPDATE_TOPIC,
                     CONFIG_UPDATE_EVENT_VERSION_0,
-                    UPDATE_TYPE,
+                    B256::ZERO, // Update type
                 ],
                 hex!("00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000beef").into()
             )
