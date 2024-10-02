@@ -62,7 +62,7 @@ pub trait TrieHinter {
     ///
     /// ## Returns
     /// - Ok(()): If the hint was successful.
-    fn hint_trie_node(&self, hash: B256) -> Result<(), Self::Error>;
+    fn hint_trie_node(&mut self, hash: B256) -> Result<(), Self::Error>;
 
     /// Hints the host to fetch the trie node preimages on the path to the given address.
     ///
@@ -121,7 +121,7 @@ pub struct NoopTrieHinter;
 impl TrieHinter for NoopTrieHinter {
     type Error = String;
 
-    fn hint_trie_node(&self, _hash: B256) -> Result<(), Self::Error> {
+    fn hint_trie_node(&mut self, _hash: B256) -> Result<(), Self::Error> {
         Ok(())
     }
 

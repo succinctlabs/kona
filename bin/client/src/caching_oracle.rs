@@ -11,7 +11,7 @@ use kona_preimage::{
     errors::PreimageOracleResult, HintWriterClient, PreimageKey, PreimageOracleClient,
 };
 use lru::LruCache;
-use spin::Mutex;
+use tokio::sync::Mutex;
 
 /// A wrapper around an [OracleReader] and [HintWriter] that stores a configurable number of
 /// responses in an [LruCache] for quick retrieval.
@@ -56,11 +56,11 @@ where
 #[async_trait]
 impl<OR, HW> PreimageOracleClient for CachingOracle<OR, HW>
 where
-    OR: PreimageOracleClient + Sync,
-    HW: HintWriterClient + Sync,
+    OR: PreimageOracleClient + Sync + Send,
+    HW: HintWriterClient + Sync + Send,
 {
-    async fn get(&self, key: PreimageKey) -> PreimageOracleResult<Vec<u8>> {
-        let mut cache_lock = self.cache.lock();
+    async fn get(&mut self, key: PreimageKey) -> PreimageOracleResult<Vec<u8>> {
+        let mut cache_lock = self.cache.lock().await;
         if let Some(value) = cache_lock.get(&key) {
             Ok(value.clone())
         } else {
@@ -70,8 +70,8 @@ where
         }
     }
 
-    async fn get_exact(&self, key: PreimageKey, buf: &mut [u8]) -> PreimageOracleResult<()> {
-        let mut cache_lock = self.cache.lock();
+    async fn get_exact(&mut self, key: PreimageKey, buf: &mut [u8]) -> PreimageOracleResult<()> {
+        let mut cache_lock = self.cache.lock().await;
         if let Some(value) = cache_lock.get(&key) {
             // SAFETY: The value never enters the cache unless the preimage length matches the
             // buffer length, due to the checks in the OracleReader.
@@ -88,10 +88,10 @@ where
 #[async_trait]
 impl<OR, HW> HintWriterClient for CachingOracle<OR, HW>
 where
-    OR: PreimageOracleClient + Sync,
-    HW: HintWriterClient + Sync,
+    OR: PreimageOracleClient + Sync + Send,
+    HW: HintWriterClient + Sync + Send,
 {
-    async fn write(&self, hint: &str) -> PreimageOracleResult<()> {
+    async fn write(&mut self, hint: &str) -> PreimageOracleResult<()> {
         self.hint_writer.write(hint).await
     }
 }

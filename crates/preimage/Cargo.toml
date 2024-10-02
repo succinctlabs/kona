@@ -32,6 +32,6 @@ tokio.workspace = true
 os_pipe.workspace = true
 
 [features]
-default = []
+default = ["kona-common/std"]
 rkyv = ["dep:rkyv"]
 serde = ["dep:serde"]

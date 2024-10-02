@@ -336,7 +336,7 @@ impl TrieNode {
         &mut self,
         path: &Nibbles,
         fetcher: &F,
-        hinter: &H,
+        hinter: &mut H,
     ) -> TrieNodeResult<()> {
         match self {
             Self::Empty => Err(TrieNodeError::KeyNotFound(self.to_string())),
@@ -425,7 +425,7 @@ impl TrieNode {
     fn collapse_if_possible<F: TrieProvider, H: TrieHinter>(
         &mut self,
         fetcher: &F,
-        hinter: &H,
+        hinter: &mut H,
     ) -> TrieNodeResult<()> {
         match self {
             Self::Extension { prefix, node } => match node.as_mut() {
@@ -894,7 +894,7 @@ mod test {
 
             // Delete the keys that were randomly selected from the trie node.
             for deleted_key in deleted_keys {
-                node.delete(&Nibbles::unpack(deleted_key), &NoopTrieProvider, &NoopTrieHinter)
+                node.delete(&Nibbles::unpack(deleted_key), &NoopTrieProvider, &mut NoopTrieHinter)
                     .unwrap();
             }
 

@@ -17,6 +17,7 @@ use kona_common_proc::client_entry;
 
 pub(crate) mod fault;
 use fault::{fpvm_handle_register, HINT_WRITER, ORACLE_READER};
+use tokio::sync::RwLock;
 
 /// The size of the LRU cache in the oracle.
 const ORACLE_LRU_SIZE: usize = 1024;
@@ -37,11 +38,12 @@ fn main() -> Result<()> {
         //                          PROLOGUE                          //
         ////////////////////////////////////////////////////////////////
 
-        let oracle = Arc::new(CachingOracle::new(ORACLE_LRU_SIZE, ORACLE_READER, HINT_WRITER));
-        let boot = Arc::new(BootInfo::load(oracle.as_ref()).await?);
-        let l1_provider = OracleL1ChainProvider::new(boot.clone(), oracle.clone());
-        let l2_provider = OracleL2ChainProvider::new(boot.clone(), oracle.clone());
-        let beacon = OracleBlobProvider::new(oracle.clone());
+        let mut oracle = CachingOracle::new(ORACLE_LRU_SIZE, ORACLE_READER, HINT_WRITER);
+        let arc_oracle = Arc::new(RwLock::new(oracle));
+        let boot = Arc::new(BootInfo::load(arc_oracle.get_mut()).await?);
+        let l1_provider = OracleL1ChainProvider::new(boot.clone(), arc_oracle.clone());
+        let l2_provider = OracleL2ChainProvider::new(boot.clone(), arc_oracle.clone());
+        let beacon = OracleBlobProvider::new(arc_oracle);
 
         ////////////////////////////////////////////////////////////////
         //                   DERIVATION & EXECUTION                   //
@@ -50,7 +52,7 @@ fn main() -> Result<()> {
         // Create a new derivation driver with the given boot information and oracle.
         let mut driver = DerivationDriver::new(
             boot.as_ref(),
-            oracle.as_ref(),
+            &mut oracle,
             beacon,
             l1_provider,
             l2_provider.clone(),

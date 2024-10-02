@@ -12,7 +12,7 @@ pub trait PreimageOracleClient {
     /// # Returns
     /// - `Ok(Vec<u8>)` if the data was successfully fetched from the host.
     /// - `Err(_)` if the data could not be fetched from the host.
-    async fn get(&self, key: PreimageKey) -> PreimageOracleResult<Vec<u8>>;
+    async fn get(&mut self, key: PreimageKey) -> PreimageOracleResult<Vec<u8>>;
 
     /// Get the data corresponding to the currently set key from the host. Writes the data into the
     /// provided buffer.
@@ -20,7 +20,7 @@ pub trait PreimageOracleClient {
     /// # Returns
     /// - `Ok(())` if the data was successfully written into the buffer.
     /// - `Err(_)` if the data could not be written into the buffer.
-    async fn get_exact(&self, key: PreimageKey, buf: &mut [u8]) -> PreimageOracleResult<()>;
+    async fn get_exact(&mut self, key: PreimageKey, buf: &mut [u8]) -> PreimageOracleResult<()>;
 }
 
 /// A [HintWriterClient] is a high-level interface to the hint pipe. It provides a way to write
@@ -33,7 +33,7 @@ pub trait HintWriterClient {
     /// # Returns
     /// - `Ok(())` if the hint was successfully written to the host.
     /// - `Err(_)` if the hint could not be written to the host.
-    async fn write(&self, hint: &str) -> PreimageOracleResult<()>;
+    async fn write(&mut self, hint: &str) -> PreimageOracleResult<()>;
 }
 
 /// A [CommsClient] is a trait that combines the [PreimageOracleClient] and [HintWriterClient]
@@ -51,7 +51,7 @@ pub trait PreimageOracleServer {
     /// # Returns
     /// - `Ok(())` if the data was successfully written into the client pipe.
     /// - `Err(_)` if the data could not be written to the client.
-    async fn next_preimage_request<F>(&self, get_preimage: &F) -> PreimageOracleResult<()>
+    async fn next_preimage_request<F>(&mut self, get_preimage: &F) -> PreimageOracleResult<()>
     where
         F: PreimageFetcher + Send + Sync;
 }
@@ -66,7 +66,7 @@ pub trait HintReaderServer {
     /// - `Ok(())` if the hint was received and the client was notified of the host's
     ///   acknowledgement.
     /// - `Err(_)` if the hint was not received correctly.
-    async fn next_hint<R>(&self, route_hint: &R) -> PreimageOracleResult<()>
+    async fn next_hint<R>(&mut self, route_hint: &R) -> PreimageOracleResult<()>
     where
         R: HintRouter + Send + Sync;
 }

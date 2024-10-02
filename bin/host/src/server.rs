@@ -55,14 +55,14 @@ where
     }
 
     /// Starts the [PreimageServer] and waits for incoming requests.
-    pub async fn start(self) -> Result<()> {
+    pub async fn start(&mut self) -> Result<()> {
         // Create the futures for the oracle server and hint router.
         let server_fut = Self::start_oracle_server(
             self.kv_store.clone(),
             self.fetcher.clone(),
-            self.oracle_server,
+            &mut self.oracle_server,
         );
-        let hinter_fut = Self::start_hint_router(self.hint_reader, self.fetcher);
+        let hinter_fut = Self::start_hint_router(&mut self.hint_reader, self.fetcher.clone());
 
         // Spawn tasks for the futures and wait for them to complete.
         let server = tokio::task::spawn(server_fut);
@@ -78,10 +78,10 @@ where
     async fn start_oracle_server(
         kv_store: Arc<RwLock<KV>>,
         fetcher: Option<Arc<RwLock<Fetcher<KV>>>>,
-        oracle_server: P,
+        oracle_server: &mut P,
     ) -> Result<()> {
         #[inline(always)]
-        async fn do_loop<F, P>(fetcher: &F, server: &P) -> Result<()>
+        async fn do_loop<F, P>(fetcher: &F, server: &mut P) -> Result<()>
         where
             F: PreimageFetcher + Send + Sync,
             P: PreimageOracleServer,
@@ -99,20 +99,20 @@ where
         }
 
         if let Some(fetcher) = fetcher.as_ref() {
-            do_loop(&OnlinePreimageFetcher::new(Arc::clone(fetcher)), &oracle_server).await
+            do_loop(&OnlinePreimageFetcher::new(Arc::clone(fetcher)), oracle_server).await
         } else {
-            do_loop(&OfflinePreimageFetcher::new(Arc::clone(&kv_store)), &oracle_server).await
+            do_loop(&OfflinePreimageFetcher::new(Arc::clone(&kv_store)), oracle_server).await
         }
     }
 
     /// Starts the hint router, which waits for incoming hints and routes them to the appropriate
     /// handler.
     async fn start_hint_router(
-        hint_reader: H,
+        hint_reader: &mut H,
         fetcher: Option<Arc<RwLock<Fetcher<KV>>>>,
     ) -> Result<()> {
         #[inline(always)]
-        async fn do_loop<R, H>(router: &R, server: &H) -> Result<()>
+        async fn do_loop<R, H>(router: &R, server: &mut H) -> Result<()>
         where
             R: HintRouter + Send + Sync,
             H: HintReaderServer,
@@ -130,9 +130,9 @@ where
         }
 
         if let Some(fetcher) = fetcher {
-            do_loop(&OnlineHintRouter::new(Arc::clone(&fetcher)), &hint_reader).await
+            do_loop(&OnlineHintRouter::new(Arc::clone(&fetcher)), hint_reader).await
         } else {
-            do_loop(&OfflineHintRouter, &hint_reader).await
+            do_loop(&OfflineHintRouter, hint_reader).await
         }
     }
 }

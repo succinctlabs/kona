@@ -11,16 +11,17 @@ use kona_derive::traits::BlobProvider;
 use kona_preimage::{CommsClient, PreimageKey, PreimageKeyType};
 use kona_primitives::IndexedBlobHash;
 use op_alloy_protocol::BlockInfo;
+use tokio::sync::RwLock;
 
 /// An oracle-backed blob provider.
 #[derive(Debug, Clone)]
 pub struct OracleBlobProvider<T: CommsClient> {
-    oracle: Arc<T>,
+    oracle: Arc<RwLock<T>>,
 }
 
 impl<T: CommsClient> OracleBlobProvider<T> {
     /// Constructs a new `OracleBlobProvider`.
-    pub fn new(oracle: Arc<T>) -> Self {
+    pub fn new(oracle: Arc<RwLock<T>>) -> Self {
         Self { oracle }
     }
 
@@ -33,18 +34,28 @@ impl<T: CommsClient> OracleBlobProvider<T> {
     /// ## Returns
     /// - `Ok(blob)`: The blob.
     /// - `Err(e)`: The blob could not be retrieved.
-    async fn get_blob(&self, block_ref: &BlockInfo, blob_hash: &IndexedBlobHash) -> Result<Blob> {
+    async fn get_blob(
+        &mut self,
+        block_ref: &BlockInfo,
+        blob_hash: &IndexedBlobHash,
+    ) -> Result<Blob> {
         let mut blob_req_meta = [0u8; 48];
         blob_req_meta[0..32].copy_from_slice(blob_hash.hash.as_ref());
         blob_req_meta[32..40].copy_from_slice((blob_hash.index as u64).to_be_bytes().as_ref());
         blob_req_meta[40..48].copy_from_slice(block_ref.timestamp.to_be_bytes().as_ref());
 
         // Send a hint for the blob commitment and field elements.
-        self.oracle.write(&HintType::L1Blob.encode_with(&[blob_req_meta.as_ref()])).await?;
+        self.oracle
+            .write()
+            .await
+            .write(&HintType::L1Blob.encode_with(&[blob_req_meta.as_ref()]))
+            .await?;
 
         // Fetch the blob commitment.
         let mut commitment = [0u8; 48];
         self.oracle
+            .write()
+            .await
             .get_exact(PreimageKey::new(*blob_hash.hash, PreimageKeyType::Sha256), &mut commitment)
             .await?;
 
@@ -57,6 +68,8 @@ impl<T: CommsClient> OracleBlobProvider<T> {
 
             let mut field_element = [0u8; 32];
             self.oracle
+                .write()
+                .await
                 .get_exact(
                     PreimageKey::new(*keccak256(field_element_key), PreimageKeyType::Blob),
                     &mut field_element,

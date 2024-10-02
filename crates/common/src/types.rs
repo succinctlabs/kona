@@ -1,7 +1,10 @@
 //! This module contains the local types for the `kona-common` crate.
 
+use std::{fs::File, os::fd::AsRawFd};
+
 /// File descriptors available to the `client` within the FPVM kernel.
-#[derive(Debug, Clone, Copy)]
+#[cfg_attr(not(feature = "std"), derive(Clone))]
+#[derive(Debug)]
 pub enum FileDescriptor {
     /// Read-only standard input stream.
     StdIn,
@@ -17,8 +20,19 @@ pub enum FileDescriptor {
     PreimageRead,
     /// Write-only. Used to request pre-images.
     PreimageWrite,
+    #[cfg(feature = "std")]
     /// Other file descriptor.
-    Wildcard(usize),
+    Wildcard(File),
+}
+
+#[cfg(feature = "std")]
+impl Clone for FileDescriptor {
+    fn clone(&self) -> Self {
+        match self {
+            FileDescriptor::Wildcard(file) => FileDescriptor::Wildcard(file.try_clone().unwrap()),
+            _ => self.clone(),
+        }
+    }
 }
 
 impl From<FileDescriptor> for usize {
@@ -31,7 +45,8 @@ impl From<FileDescriptor> for usize {
             FileDescriptor::HintWrite => 4,
             FileDescriptor::PreimageRead => 5,
             FileDescriptor::PreimageWrite => 6,
-            FileDescriptor::Wildcard(value) => value,
+            #[cfg(feature = "std")]
+            FileDescriptor::Wildcard(value) => value.as_raw_fd() as usize,
         }
     }
 }

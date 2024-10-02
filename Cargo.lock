@@ -2304,6 +2304,7 @@ dependencies = [
  "serde",
  "serde_json",
  "spin",
+ "tokio",
  "tracing",
  "tracing-subscriber",
 ]

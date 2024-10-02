@@ -9,7 +9,7 @@ use tracing::{error, trace};
 
 /// A [HintWriter] is a high-level interface to the hint pipe. It provides a way to write hints to
 /// the host.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct HintWriter {
     pipe_handle: PipeHandle,
 }
@@ -25,7 +25,7 @@ impl HintWriter {
 impl HintWriterClient for HintWriter {
     /// Write a hint to the host. This will overwrite any existing hint in the pipe, and block until
     /// all data has been written.
-    async fn write(&self, hint: &str) -> PreimageOracleResult<()> {
+    async fn write(&mut self, hint: &str) -> PreimageOracleResult<()> {
         // Form the hint into a byte buffer. The format is a 4-byte big-endian length prefix
         // followed by the hint string.
         let mut hint_bytes = vec![0u8; hint.len() + 4];
@@ -51,7 +51,7 @@ impl HintWriterClient for HintWriter {
 
 /// A [HintReader] is a router for hints sent by the [HintWriter] from the client program. It
 /// provides a way for the host to prepare preimages for reading.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct HintReader {
     pipe_handle: PipeHandle,
 }
@@ -65,7 +65,7 @@ impl HintReader {
 
 #[async_trait]
 impl HintReaderServer for HintReader {
-    async fn next_hint<R>(&self, hint_router: &R) -> PreimageOracleResult<()>
+    async fn next_hint<R>(&mut self, hint_router: &R) -> PreimageOracleResult<()>
     where
         R: HintRouter + Send + Sync,
     {
@@ -115,7 +115,10 @@ mod test {
     use crate::test_utils::bidirectional_pipe;
     use alloc::{sync::Arc, vec::Vec};
     use kona_common::FileDescriptor;
-    use std::os::unix::io::AsRawFd;
+    use std::{
+        fs::File,
+        os::{fd::AsFd, unix::io::AsRawFd},
+    };
     use tokio::sync::Mutex;
 
     struct TestRouter {
@@ -147,8 +150,8 @@ mod test {
 
         let client = tokio::task::spawn(async move {
             let hint_writer = HintWriter::new(PipeHandle::new(
-                FileDescriptor::Wildcard(hint_pipe.client.read.as_raw_fd() as usize),
-                FileDescriptor::Wildcard(hint_pipe.client.write.as_raw_fd() as usize),
+                FileDescriptor::Wildcard(hint_pipe.client.read.0),
+                FileDescriptor::Wildcard(hint_pipe.client.write.0),
             ));
 
             #[allow(invalid_from_utf8_unchecked)]
@@ -158,8 +161,8 @@ mod test {
             let router = TestRouter { incoming_hints: Default::default() };
 
             let hint_reader = HintReader::new(PipeHandle::new(
-                FileDescriptor::Wildcard(hint_pipe.host.read.as_raw_fd() as usize),
-                FileDescriptor::Wildcard(hint_pipe.host.write.as_raw_fd() as usize),
+                FileDescriptor::Wildcard(hint_pipe.host.read.0),
+                FileDescriptor::Wildcard(hint_pipe.host.write.0),
             ));
             hint_reader.next_hint(&router).await
         });

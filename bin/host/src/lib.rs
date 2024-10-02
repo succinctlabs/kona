@@ -135,12 +135,12 @@ where
     KV: KeyValueStore + Send + Sync + ?Sized + 'static,
 {
     let hint_reader = HintReader::new(PipeHandle::new(
-        FileDescriptor::Wildcard(hint_pipe.read.as_raw_fd() as usize),
-        FileDescriptor::Wildcard(hint_pipe.write.as_raw_fd() as usize),
+        FileDescriptor::Wildcard(hint_pipe.read.0),
+        FileDescriptor::Wildcard(hint_pipe.write.0),
     ));
     let oracle_server = OracleServer::new(PipeHandle::new(
-        FileDescriptor::Wildcard(preimage_pipe.read.as_raw_fd() as usize),
-        FileDescriptor::Wildcard(preimage_pipe.write.as_raw_fd() as usize),
+        FileDescriptor::Wildcard(preimage_pipe.read.0),
+        FileDescriptor::Wildcard(preimage_pipe.write.0),
     ));
 
     let server = PreimageServer::new(oracle_server, hint_reader, kv_store, fetcher);

@@ -62,7 +62,7 @@ impl BootInfo {
     /// ## Returns
     /// - `Ok(BootInfo)`: The boot information.
     /// - `Err(_)`: Failed to load the boot information.
-    pub async fn load<O>(oracle: &O) -> Result<Self>
+    pub async fn load<O>(oracle: &mut O) -> Result<Self>
     where
         O: PreimageOracleClient + Send,
     {

@@ -11,7 +11,7 @@ use core::{
 use kona_common::{errors::IOResult, io, FileDescriptor};
 
 /// [PipeHandle] is a handle for one end of a bidirectional pipe.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct PipeHandle {
     /// File descriptor to read from
     read_handle: FileDescriptor,
@@ -26,28 +26,21 @@ impl PipeHandle {
     }
 
     /// Read from the pipe into the given buffer.
-    pub fn read(&self, buf: &mut [u8]) -> IOResult<usize> {
-        io::read(self.read_handle, buf)
+    pub fn read(&mut self, buf: &mut [u8]) -> IOResult<usize> {
+        io::read(&mut self.read_handle, buf)
     }
 
     /// Reads exactly `buf.len()` bytes into `buf`.
-    pub fn read_exact<'a>(&self, buf: &'a mut [u8]) -> impl Future<Output = IOResult<usize>> + 'a {
-        ReadFuture { pipe_handle: *self, buf: RefCell::new(buf), read: 0 }
+    pub fn read_exact<'a>(
+        &mut self,
+        buf: &'a mut [u8],
+    ) -> impl Future<Output = IOResult<usize>> + 'a {
+        ReadFuture { pipe_handle: self.clone(), buf: RefCell::new(buf), read: 0 }
     }
 
     /// Write the given buffer to the pipe.
-    pub fn write<'a>(&self, buf: &'a [u8]) -> impl Future<Output = IOResult<usize>> + 'a {
-        WriteFuture { pipe_handle: *self, buf, written: 0 }
-    }
-
-    /// Returns the read handle for the pipe.
-    pub const fn read_handle(&self) -> FileDescriptor {
-        self.read_handle
-    }
-
-    /// Returns the write handle for the pipe.
-    pub const fn write_handle(&self) -> FileDescriptor {
-        self.write_handle
+    pub fn write<'a>(&mut self, buf: &'a [u8]) -> impl Future<Output = IOResult<usize>> + 'a {
+        WriteFuture { pipe_handle: self.clone(), buf, written: 0 }
     }
 }
 
@@ -67,7 +60,7 @@ impl Future for ReadFuture<'_> {
     fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
         let mut buf = self.buf.borrow_mut();
         let buf_len = buf.len();
-        let chunk_read = self.pipe_handle.read(&mut buf[self.read..])?;
+        let chunk_read = self.pipe_handle.clone().read(&mut buf[self.read..])?;
 
         // Drop the borrow on self.
         drop(buf);
@@ -99,7 +92,8 @@ impl Future for WriteFuture<'_> {
     type Output = IOResult<usize>;
 
     fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
-        match io::write(self.pipe_handle.write_handle(), &self.buf[self.written..]) {
+        let buf: &[u8] = &self.buf[self.written..];
+        match io::write(&mut self.pipe_handle.write_handle, buf) {
             Ok(0) => Poll::Ready(Ok(self.written)), // Finished writing
             Ok(n) => {
                 self.written += n;

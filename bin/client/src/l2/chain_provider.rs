@@ -14,6 +14,7 @@ use kona_preimage::{CommsClient, PreimageKey, PreimageKeyType};
 use op_alloy_consensus::OpTxEnvelope;
 use op_alloy_genesis::{RollupConfig, SystemConfig};
 use op_alloy_protocol::L2BlockInfo;
+use tokio::sync::RwLock;
 
 /// The oracle-backed L2 chain provider for the client program.
 #[derive(Debug, Clone)]
@@ -21,12 +22,12 @@ pub struct OracleL2ChainProvider<T: CommsClient> {
     /// The boot information
     boot_info: Arc<BootInfo>,
     /// The preimage oracle client.
-    oracle: Arc<T>,
+    oracle: Arc<RwLock<T>>,
 }
 
 impl<T: CommsClient> OracleL2ChainProvider<T> {
     /// Creates a new [OracleL2ChainProvider] with the given boot information and oracle client.
-    pub fn new(boot_info: Arc<BootInfo>, oracle: Arc<T>) -> Self {
+    pub fn new(boot_info: Arc<BootInfo>, oracle: Arc<RwLock<T>>) -> Self {
         Self { boot_info, oracle }
     }
 }
@@ -37,12 +38,17 @@ impl<T: CommsClient> OracleL2ChainProvider<T> {
     async fn header_by_number(&mut self, block_number: u64) -> Result<Header> {
         // Fetch the starting L2 output preimage.
         self.oracle
+            .clone()
+            .write()
+            .await
             .write(
                 &HintType::StartingL2Output.encode_with(&[self.boot_info.l2_output_root.as_ref()]),
             )
             .await?;
         let output_preimage = self
             .oracle
+            .write()
+            .await
             .get(PreimageKey::new(*self.boot_info.l2_output_root, PreimageKeyType::Keccak256))
             .await?;
 
@@ -85,7 +91,11 @@ impl<T: CommsClient + Send + Sync> L2ChainProvider for OracleL2ChainProvider<T> 
         let header_hash = header.hash_slow();
 
         // Fetch the transactions in the block.
-        self.oracle.write(&HintType::L2Transactions.encode_with(&[header_hash.as_ref()])).await?;
+        self.oracle
+            .write()
+            .await
+            .write(&HintType::L2Transactions.encode_with(&[header_hash.as_ref()]))
+            .await?;
         let trie_walker = OrderedListWalker::try_new_hydrated(transactions_root, self)?;
 
         // Decode the transactions within the transactions trie.
@@ -127,6 +137,8 @@ impl<T: CommsClient> TrieProvider for OracleL2ChainProvider<T> {
         // that a hint for these preimages has already been sent, prior to this call.
         kona_common::block_on(async move {
             self.oracle
+                .write()
+                .await
                 .get(PreimageKey::new(*key, PreimageKeyType::Keccak256))
                 .await
                 .map(Into::into)
@@ -137,9 +149,15 @@ impl<T: CommsClient> TrieProvider for OracleL2ChainProvider<T> {
     fn bytecode_by_hash(&self, hash: B256) -> Result<Bytes> {
         // Fetch the bytecode preimage from the caching oracle.
         kona_common::block_on(async move {
-            self.oracle.write(&HintType::L2Code.encode_with(&[hash.as_ref()])).await?;
+            self.oracle
+                .write()
+                .await
+                .write(&HintType::L2Code.encode_with(&[hash.as_ref()]))
+                .await?;
 
             self.oracle
+                .write()
+                .await
                 .get(PreimageKey::new(*hash, PreimageKeyType::Keccak256))
                 .await
                 .map(Into::into)
@@ -150,10 +168,18 @@ impl<T: CommsClient> TrieProvider for OracleL2ChainProvider<T> {
     fn header_by_hash(&self, hash: B256) -> Result<Header> {
         // Fetch the header from the caching oracle.
         kona_common::block_on(async move {
-            self.oracle.write(&HintType::L2BlockHeader.encode_with(&[hash.as_ref()])).await?;
+            self.oracle
+                .write()
+                .await
+                .write(&HintType::L2BlockHeader.encode_with(&[hash.as_ref()]))
+                .await?;
 
-            let header_bytes =
-                self.oracle.get(PreimageKey::new(*hash, PreimageKeyType::Keccak256)).await?;
+            let header_bytes = self
+                .oracle
+                .write()
+                .await
+                .get(PreimageKey::new(*hash, PreimageKeyType::Keccak256))
+                .await?;
             Header::decode(&mut header_bytes.as_slice())
                 .map_err(|e| anyhow!("Failed to RLP decode Header: {e}"))
         })
@@ -163,9 +189,11 @@ impl<T: CommsClient> TrieProvider for OracleL2ChainProvider<T> {
 impl<T: CommsClient> TrieHinter for OracleL2ChainProvider<T> {
     type Error = anyhow::Error;
 
-    fn hint_trie_node(&self, hash: B256) -> Result<()> {
+    fn hint_trie_node(&mut self, hash: B256) -> Result<()> {
         kona_common::block_on(async move {
             self.oracle
+                .write()
+                .await
                 .write(&HintType::L2StateNode.encode_with(&[hash.as_slice()]))
                 .await
                 .map_err(Into::into)
@@ -175,6 +203,8 @@ impl<T: CommsClient> TrieHinter for OracleL2ChainProvider<T> {
     fn hint_account_proof(&self, address: Address, block_number: u64) -> Result<()> {
         kona_common::block_on(async move {
             self.oracle
+                .write()
+                .await
                 .write(
                     &HintType::L2AccountProof
                         .encode_with(&[block_number.to_be_bytes().as_ref(), address.as_slice()]),
@@ -192,6 +222,8 @@ impl<T: CommsClient> TrieHinter for OracleL2ChainProvider<T> {
     ) -> Result<()> {
         kona_common::block_on(async move {
             self.oracle
+                .write()
+                .await
                 .write(&HintType::L2AccountStorageProof.encode_with(&[
                     block_number.to_be_bytes().as_ref(),
                     address.as_slice(),

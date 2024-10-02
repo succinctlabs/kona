@@ -39,6 +39,7 @@ async-trait.workspace = true
 tracing.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+tokio.workspace = true
 
 # `tracing-subscriber` feature dependencies
 tracing-subscriber = { workspace = true, optional = true }

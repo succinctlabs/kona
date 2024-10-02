@@ -26,7 +26,7 @@ cfg_if! {
 /// Panics if the write operation fails.
 #[inline]
 pub fn print(s: &str) {
-    ClientIO::write(FileDescriptor::StdOut, s.as_bytes()).expect("Error writing to stdout.");
+    ClientIO::write(&mut FileDescriptor::StdOut, s.as_bytes()).expect("Error writing to stdout.");
 }
 
 /// Print the passed string to the standard error [FileDescriptor].
@@ -35,18 +35,18 @@ pub fn print(s: &str) {
 /// Panics if the write operation fails.
 #[inline]
 pub fn print_err(s: &str) {
-    ClientIO::write(FileDescriptor::StdErr, s.as_bytes()).expect("Error writing to stderr.");
+    ClientIO::write(&mut FileDescriptor::StdErr, s.as_bytes()).expect("Error writing to stderr.");
 }
 
 /// Write the passed buffer to the given [FileDescriptor].
 #[inline]
-pub fn write(fd: FileDescriptor, buf: &[u8]) -> IOResult<usize> {
+pub fn write(fd: &mut FileDescriptor, buf: &[u8]) -> IOResult<usize> {
     ClientIO::write(fd, buf)
 }
 
 /// Write the passed buffer to the given [FileDescriptor].
 #[inline]
-pub fn read(fd: FileDescriptor, buf: &mut [u8]) -> IOResult<usize> {
+pub fn read(fd: &mut FileDescriptor, buf: &mut [u8]) -> IOResult<usize> {
     ClientIO::read(fd, buf)
 }
 
@@ -75,26 +75,40 @@ pub(crate) mod native_io {
     pub(crate) struct NativeIO;
 
     impl BasicKernelInterface for NativeIO {
-        fn write(fd: FileDescriptor, buf: &[u8]) -> IOResult<usize> {
-            let raw_fd: usize = fd.into();
-            let mut file = unsafe { File::from_raw_fd(raw_fd as i32) };
+        fn write(fd: &mut FileDescriptor, buf: &[u8]) -> IOResult<usize> {
+            match fd {
+                #[cfg(feature = "std")]
+                FileDescriptor::Wildcard(file) => file.write(buf).map_err(|_| IOError(9)),
+                _ => {
+                    let raw_fd: usize = (*fd).clone().into();
+                    let mut file = unsafe { File::from_raw_fd(raw_fd as i32) };
 
-            file.write_all(buf).map_err(|_| IOError(9))?;
+                    file.write_all(buf).map_err(|_| IOError(9))?;
 
-            std::mem::forget(file);
+                    std::mem::forget(file);
 
-            Ok(buf.len())
+                    Ok(buf.len())
+                }
+            }
         }
 
-        fn read(fd: FileDescriptor, buf: &mut [u8]) -> IOResult<usize> {
-            let raw_fd: usize = fd.into();
-            let mut file = unsafe { File::from_raw_fd(raw_fd as i32) };
+        fn read(fd: &mut FileDescriptor, buf: &mut [u8]) -> IOResult<usize> {
+            match fd {
+                #[cfg(feature = "std")]
+                FileDescriptor::Wildcard(file) => file.read(buf).map_err(|_| IOError(9)),
+                _ => {
+                    let raw_fd: usize = (*fd).clone().into();
+                    let mut file = unsafe { File::from_raw_fd(raw_fd as i32) };
 
-            let n = file.read(buf).map_err(|_| IOError(9))?;
+                    file.read_exact(buf).map_err(|_| IOError(9))?;
 
-            std::mem::forget(file);
+                    std::mem::forget(file);
 
-            Ok(n)
+                    Ok(buf.len())
+                }
+            }
+
+            // Ok(n)
         }
 
         fn exit(code: usize) -> ! {

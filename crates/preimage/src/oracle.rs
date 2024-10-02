@@ -7,7 +7,7 @@ use alloc::{boxed::Box, vec::Vec};
 use tracing::trace;
 
 /// An [OracleReader] is a high-level interface to the preimage oracle.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct OracleReader {
     pipe_handle: PipeHandle,
 }
@@ -21,7 +21,7 @@ impl OracleReader {
     /// Set the preimage key for the global oracle reader. This will overwrite any existing key, and
     /// block until the host has prepared the preimage and responded with the length of the
     /// preimage.
-    async fn write_key(&self, key: PreimageKey) -> PreimageOracleResult<usize> {
+    async fn write_key(&mut self, key: PreimageKey) -> PreimageOracleResult<usize> {
         // Write the key to the host so that it can prepare the preimage.
         let key_bytes: [u8; 32] = key.into();
         self.pipe_handle.write(&key_bytes).await?;
@@ -37,7 +37,7 @@ impl OracleReader {
 impl PreimageOracleClient for OracleReader {
     /// Get the data corresponding to the currently set key from the host. Return the data in a new
     /// heap allocated `Vec<u8>`
-    async fn get(&self, key: PreimageKey) -> PreimageOracleResult<Vec<u8>> {
+    async fn get(&mut self, key: PreimageKey) -> PreimageOracleResult<Vec<u8>> {
         trace!(target: "oracle_client", "Requesting data from preimage oracle. Key {key}");
 
         let length = self.write_key(key).await?;
@@ -60,7 +60,7 @@ impl PreimageOracleClient for OracleReader {
 
     /// Get the data corresponding to the currently set key from the host. Write the data into the
     /// provided buffer
-    async fn get_exact(&self, key: PreimageKey, buf: &mut [u8]) -> PreimageOracleResult<()> {
+    async fn get_exact(&mut self, key: PreimageKey, buf: &mut [u8]) -> PreimageOracleResult<()> {
         trace!(target: "oracle_client", "Requesting data from preimage oracle. Key {key}");
 
         // Write the key to the host and read the length of the preimage.
@@ -86,7 +86,7 @@ impl PreimageOracleClient for OracleReader {
 }
 
 /// An [OracleServer] is a router for the host to serve data back to the client [OracleReader].
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct OracleServer {
     pipe_handle: PipeHandle,
 }
@@ -100,7 +100,7 @@ impl OracleServer {
 
 #[async_trait::async_trait]
 impl PreimageOracleServer for OracleServer {
-    async fn next_preimage_request<F>(&self, fetcher: &F) -> Result<(), PreimageOracleError>
+    async fn next_preimage_request<F>(&mut self, fetcher: &F) -> Result<(), PreimageOracleError>
     where
         F: PreimageFetcher + Send + Sync,
     {
@@ -170,8 +170,8 @@ mod test {
 
         let client = tokio::task::spawn(async move {
             let oracle_reader = OracleReader::new(PipeHandle::new(
-                FileDescriptor::Wildcard(preimage_pipe.client.read.as_raw_fd() as usize),
-                FileDescriptor::Wildcard(preimage_pipe.client.write.as_raw_fd() as usize),
+                FileDescriptor::Wildcard(preimage_pipe.client.read.0),
+                FileDescriptor::Wildcard(preimage_pipe.client.write.0),
             ));
             let contents_a = oracle_reader.get(key_a).await.unwrap();
             let contents_b = oracle_reader.get(key_b).await.unwrap();
@@ -180,8 +180,8 @@ mod test {
         });
         tokio::task::spawn(async move {
             let oracle_server = OracleServer::new(PipeHandle::new(
-                FileDescriptor::Wildcard(preimage_pipe.host.read.as_raw_fd() as usize),
-                FileDescriptor::Wildcard(preimage_pipe.host.write.as_raw_fd() as usize),
+                FileDescriptor::Wildcard(preimage_pipe.host.read.0),
+                FileDescriptor::Wildcard(preimage_pipe.host.write.0),
             ));
             let test_fetcher = TestFetcher { preimages: Arc::clone(&preimages) };
 

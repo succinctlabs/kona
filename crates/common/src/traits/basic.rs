@@ -13,10 +13,10 @@ use crate::{errors::IOResult, FileDescriptor};
 /// trait should be created that extends this trait.
 pub trait BasicKernelInterface {
     /// Write the given buffer to the given file descriptor.
-    fn write(fd: FileDescriptor, buf: &[u8]) -> IOResult<usize>;
+    fn write(fd: &mut FileDescriptor, buf: &[u8]) -> IOResult<usize>;
 
     /// Read from the given file descriptor into the passed buffer.
-    fn read(fd: FileDescriptor, buf: &mut [u8]) -> IOResult<usize>;
+    fn read(fd: &mut FileDescriptor, buf: &mut [u8]) -> IOResult<usize>;
 
     /// Exit the process with the given exit code. The implementation of this function
     /// should always panic after invoking the `EXIT` syscall.

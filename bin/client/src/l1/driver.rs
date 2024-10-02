@@ -111,7 +111,7 @@ where
     /// - A new [DerivationDriver] instance.
     pub async fn new(
         boot_info: &BootInfo,
-        caching_oracle: &O,
+        caching_oracle: &mut O,
         blob_provider: B,
         mut chain_provider: OracleL1ChainProvider<O>,
         mut l2_chain_provider: OracleL2ChainProvider<O>,
@@ -258,7 +258,7 @@ where
     /// ## Returns
     /// - A tuple containing the L1 origin block information and the L2 safe head information.
     async fn find_startup_info(
-        caching_oracle: &O,
+        caching_oracle: &mut O,
         boot_info: &BootInfo,
         chain_provider: &mut OracleL1ChainProvider<O>,
         l2_chain_provider: &mut OracleL2ChainProvider<O>,

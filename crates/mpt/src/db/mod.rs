@@ -236,7 +236,7 @@ where
 
             // If the account was destroyed, delete it from the trie.
             if bundle_account.was_destroyed() {
-                self.root_node.delete(&account_path, &self.fetcher, &self.hinter)?;
+                self.root_node.delete(&account_path, &self.fetcher, &mut self.hinter)?;
                 self.storage_roots.remove(address);
                 continue;
             }
@@ -256,7 +256,7 @@ where
                 .entry(*address)
                 .or_insert_with(|| TrieNode::new_blinded(EMPTY_ROOT_HASH));
             bundle_account.storage.iter().try_for_each(|(index, value)| {
-                Self::change_storage(acc_storage_root, *index, value, &self.fetcher, &self.hinter)
+                Self::change_storage(acc_storage_root, *index, value, &self.fetcher, &mut self.hinter)
             })?;
 
             // Recompute the account storage root.
@@ -292,7 +292,7 @@ where
         index: U256,
         value: &StorageSlot,
         fetcher: &F,
-        hinter: &H,
+        hinter: &mut H,
     ) -> TrieDBResult<()> {
         if !value.is_changed() {
             return Ok(());
