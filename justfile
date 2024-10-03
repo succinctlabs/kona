@@ -28,14 +28,11 @@ test-online:
 action-tests test_name='Test_ProgramAction':
   #!/bin/bash
 
-  if [ ! -d "monorepo" ]; then
-    echo "Monorepo not found. Cloning..."
-    git clone https://github.com/ethereum-optimism/monorepo
-  fi
+  just monorepo
 
   if [ ! -d "monorepo/.devnet" ]; then
     echo "Building devnet allocs for the monorepo"
-    (cd monorepo && make devnet-allocs)
+    (cd monorepo && make devnet-allocs-tests)
   fi
 
   echo "Building client and host programs for the native target"
@@ -164,3 +161,12 @@ build-client-prestate-asterisc kona_tag asterisc_tag out='./prestate-artifacts-a
     --build-arg ASTERISC_TAG={{asterisc_tag}} \
     --platform linux/amd64 \
     .
+# Clones and checks out the monorepo at the commit present in `.monorepo`
+monorepo:
+  [ ! -d monorepo ] && git clone https://github.com/ethereum-optimism/monorepo
+  cd monorepo && git checkout $(cat ../.monorepo)
+
+# Updates the pinned version of the monorepo
+update-monorepo:
+  [ ! -d monorepo ] && git clone https://github.com/ethereum-optimism/monorepo
+  cd monorepo && git rev-parse HEAD > ../.monorepo

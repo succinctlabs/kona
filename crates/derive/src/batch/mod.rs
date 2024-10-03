@@ -2,10 +2,11 @@
 //! [SingleBatch].
 
 use alloy_rlp::{Buf, Decodable};
+use kona_providers::L2ChainProvider;
 use op_alloy_genesis::RollupConfig;
 use op_alloy_protocol::{BlockInfo, L2BlockInfo};
 
-use crate::{errors::PipelineEncodingError, traits::L2ChainProvider};
+use crate::errors::PipelineEncodingError;
 
 mod batch_type;
 pub use batch_type::BatchType;
@@ -75,7 +76,7 @@ impl Batch {
     pub fn timestamp(&self) -> u64 {
         match self {
             Self::Single(sb) => sb.timestamp,
-            Self::Span(sb) => sb.timestamp(),
+            Self::Span(sb) => sb.starting_timestamp(),
         }
     }
 

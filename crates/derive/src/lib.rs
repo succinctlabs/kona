@@ -1,4 +1,8 @@
 #![doc = include_str!("../README.md")]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/anton-rs/kona/main/assets/square.png",
+    html_favicon_url = "https://raw.githubusercontent.com/anton-rs/kona/main/assets/favicon.ico"
+)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![cfg_attr(not(any(test, feature = "metrics")), no_std)]
 #![cfg_attr(not(any(test, feature = "test-utils")), warn(unused_crate_dependencies))]
@@ -12,13 +16,14 @@ pub mod prelude {
         errors::{PipelineError, PipelineErrorKind},
         pipeline::{DerivationPipeline, PipelineBuilder},
         sources::EthereumDataSource,
-        traits::{ChainProvider, L2ChainProvider, OriginProvider, Pipeline, StepResult},
+        traits::{OriginProvider, Pipeline, StepResult},
     };
+
+    pub use kona_providers::prelude::*;
 }
 
 pub mod attributes;
 pub mod batch;
-pub mod block;
 pub mod errors;
 pub mod pipeline;
 pub mod sources;

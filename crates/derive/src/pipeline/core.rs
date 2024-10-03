@@ -1,13 +1,17 @@
 //! Contains the core derivation pipeline.
 
 use super::{
-    L2ChainProvider, NextAttributes, OriginAdvancer, OriginProvider, Pipeline, PipelineError,
-    PipelineResult, ResettableStage, StepResult,
+    NextAttributes, OriginAdvancer, OriginProvider, Pipeline, PipelineError, PipelineResult,
+    ResettableStage, StepResult,
 };
-use crate::errors::PipelineErrorKind;
+use crate::{
+    errors::PipelineErrorKind,
+    traits::{FlushableStage, Signal},
+};
 use alloc::{boxed::Box, collections::VecDeque, string::ToString, sync::Arc};
 use async_trait::async_trait;
 use core::fmt::Debug;
+use kona_providers::L2ChainProvider;
 use op_alloy_genesis::RollupConfig;
 use op_alloy_protocol::{BlockInfo, L2BlockInfo};
 use op_alloy_rpc_types_engine::OptimismAttributesWithParent;
@@ -17,7 +21,13 @@ use tracing::{error, trace, warn};
 #[derive(Debug)]
 pub struct DerivationPipeline<S, P>
 where
-    S: NextAttributes + ResettableStage + OriginProvider + OriginAdvancer + Debug + Send,
+    S: NextAttributes
+        + ResettableStage
+        + FlushableStage
+        + OriginProvider
+        + OriginAdvancer
+        + Debug
+        + Send,
     P: L2ChainProvider + Send + Sync + Debug,
 {
     /// A handle to the next attributes.
@@ -34,7 +44,13 @@ where
 
 impl<S, P> DerivationPipeline<S, P>
 where
-    S: NextAttributes + ResettableStage + OriginProvider + OriginAdvancer + Debug + Send,
+    S: NextAttributes
+        + ResettableStage
+        + FlushableStage
+        + OriginProvider
+        + OriginAdvancer
+        + Debug
+        + Send,
     P: L2ChainProvider + Send + Sync + Debug,
 {
     /// Creates a new instance of the [DerivationPipeline].
@@ -49,7 +65,13 @@ where
 
 impl<S, P> OriginProvider for DerivationPipeline<S, P>
 where
-    S: NextAttributes + ResettableStage + OriginProvider + OriginAdvancer + Debug + Send,
+    S: NextAttributes
+        + ResettableStage
+        + FlushableStage
+        + OriginProvider
+        + OriginAdvancer
+        + Debug
+        + Send,
     P: L2ChainProvider + Send + Sync + Debug,
 {
     fn origin(&self) -> Option<BlockInfo> {
@@ -59,7 +81,14 @@ where
 
 impl<S, P> Iterator for DerivationPipeline<S, P>
 where
-    S: NextAttributes + ResettableStage + OriginProvider + OriginAdvancer + Debug + Send + Sync,
+    S: NextAttributes
+        + ResettableStage
+        + FlushableStage
+        + OriginProvider
+        + OriginAdvancer
+        + Debug
+        + Send
+        + Sync,
     P: L2ChainProvider + Send + Sync + Debug,
 {
     type Item = OptimismAttributesWithParent;
@@ -72,7 +101,14 @@ where
 #[async_trait]
 impl<S, P> Pipeline for DerivationPipeline<S, P>
 where
-    S: NextAttributes + ResettableStage + OriginProvider + OriginAdvancer + Debug + Send + Sync,
+    S: NextAttributes
+        + ResettableStage
+        + FlushableStage
+        + OriginProvider
+        + OriginAdvancer
+        + Debug
+        + Send
+        + Sync,
     P: L2ChainProvider + Send + Sync + Debug,
 {
     /// Peeks at the next prepared [OptimismAttributesWithParent] from the pipeline.
@@ -94,25 +130,31 @@ where
     ///
     /// The `l1_block_info` is the new L1 origin set in the [crate::stages::L1Traversal]
     /// stage.
-    async fn reset(
-        &mut self,
-        l2_block_info: BlockInfo,
-        l1_block_info: BlockInfo,
-    ) -> PipelineResult<()> {
-        let system_config = self
-            .l2_chain_provider
-            .system_config_by_number(l2_block_info.number, Arc::clone(&self.rollup_config))
-            .await
-            .map_err(|e| PipelineError::Provider(e.to_string()).temp())?;
-        match self.attributes.reset(l1_block_info, &system_config).await {
-            Ok(()) => trace!(target: "pipeline", "Stages reset"),
-            Err(err) => {
-                if let PipelineErrorKind::Temporary(PipelineError::Eof) = err {
-                    trace!(target: "pipeline", "Stages reset with EOF");
-                } else {
-                    error!(target: "pipeline", "Stage reset errored: {:?}", err);
-                    return Err(err);
+    async fn signal(&mut self, signal: Signal) -> PipelineResult<()> {
+        match signal {
+            Signal::Reset { l2_safe_head, l1_origin } => {
+                let system_config = self
+                    .l2_chain_provider
+                    .system_config_by_number(
+                        l2_safe_head.block_info.number,
+                        Arc::clone(&self.rollup_config),
+                    )
+                    .await
+                    .map_err(|e| PipelineError::Provider(e.to_string()).temp())?;
+                match self.attributes.reset(l1_origin, &system_config).await {
+                    Ok(()) => trace!(target: "pipeline", "Stages reset"),
+                    Err(err) => {
+                        if let PipelineErrorKind::Temporary(PipelineError::Eof) = err {
+                            trace!(target: "pipeline", "Stages reset with EOF");
+                        } else {
+                            error!(target: "pipeline", "Stage reset errored: {:?}", err);
+                            return Err(err);
+                        }
+                    }
                 }
+            }
+            Signal::FlushChannel => {
+                self.attributes.flush_channel().await?;
             }
         }
         Ok(())

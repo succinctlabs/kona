@@ -9,7 +9,7 @@ use anyhow::{anyhow, Result};
 use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use kona_executor::StatelessL2BlockExecutor;
 use kona_mpt::{NoopTrieHinter, TrieProvider};
-use op_alloy_genesis::{RollupConfig, OP_BASE_FEE_PARAMS, OP_CANYON_BASE_FEE_PARAMS};
+use op_alloy_genesis::{RollupConfig, OP_MAINNET_BASE_FEE_PARAMS};
 use op_alloy_rpc_types_engine::OptimismPayloadAttributes;
 use pprof::criterion::{Output, PProfProfiler};
 use serde::Deserialize;
@@ -73,8 +73,8 @@ fn op_mainnet_exec_bench(
         canyon_time: Some(0),
         delta_time: Some(0),
         ecotone_time: Some(0),
-        base_fee_params: OP_BASE_FEE_PARAMS,
-        canyon_base_fee_params: OP_CANYON_BASE_FEE_PARAMS,
+        base_fee_params: OP_MAINNET_BASE_FEE_PARAMS.as_base_fee_params(),
+        canyon_base_fee_params: OP_MAINNET_BASE_FEE_PARAMS.as_canyon_base_fee_params(),
         ..Default::default()
     };
 
@@ -126,6 +126,7 @@ fn execution(c: &mut Criterion) {
             gas_limit: Some(30_000_000),
             transactions: Some(raw_txs),
             no_tx_pool: Some(false),
+            eip_1559_params: None,
         };
 
         op_mainnet_exec_bench("block_121065789_exec", parent_header, payload_attrs, b)
@@ -167,6 +168,7 @@ fn execution(c: &mut Criterion) {
             gas_limit: Some(30_000_000),
             transactions: Some(raw_txs),
             no_tx_pool: Some(false),
+            eip_1559_params: None,
         };
 
         op_mainnet_exec_bench("block_121135704_exec", parent_header, payload_attrs, b)

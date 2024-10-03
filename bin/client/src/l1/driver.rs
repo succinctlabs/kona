@@ -19,11 +19,12 @@ use kona_derive::{
         AttributesQueue, BatchQueue, BatchStream, ChannelBank, ChannelReader, FrameQueue,
         L1Retrieval, L1Traversal,
     },
-    traits::{BlobProvider, ChainProvider, L2ChainProvider, OriginProvider},
+    traits::{BlobProvider, OriginProvider, Signal},
 };
 use kona_executor::{KonaHandleRegister, StatelessL2BlockExecutor};
 use kona_mpt::{TrieHinter, TrieProvider};
 use kona_preimage::{CommsClient, PreimageKey, PreimageKeyType};
+use kona_providers::{ChainProvider, L2ChainProvider};
 use op_alloy_genesis::RollupConfig;
 use op_alloy_protocol::{BlockInfo, L2BlockInfo};
 use op_alloy_rpc_types_engine::OptimismAttributesWithParent;
@@ -50,6 +51,7 @@ pub type OracleAttributesQueue<DAP, O> = AttributesQueue<
             ChannelReader<
                 ChannelBank<FrameQueue<L1Retrieval<DAP, L1Traversal<OracleL1ChainProvider<O>>>>>,
             >,
+            OracleL2ChainProvider<O>,
         >,
         OracleL2ChainProvider<O>,
     >,
@@ -227,12 +229,13 @@ where
                             // Reset the pipeline to the initial L2 safe head and L1 origin,
                             // and try again.
                             self.pipeline
-                                .reset(
-                                    self.l2_safe_head.block_info,
-                                    self.pipeline
+                                .signal(Signal::Reset {
+                                    l2_safe_head: self.l2_safe_head,
+                                    l1_origin: self
+                                        .pipeline
                                         .origin()
                                         .ok_or_else(|| anyhow!("Missing L1 origin"))?,
-                                )
+                                })
                                 .await?;
                         }
                         PipelineErrorKind::Critical(_) => return Err(e.into()),
