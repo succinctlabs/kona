@@ -1,6 +1,6 @@
 # ref: https://docs.codecov.com/docs/codecovyml-reference
 coverage:
-  range: 75..100
+  range: 80..100
   round: down
   precision: 1
   status:
@@ -18,11 +18,13 @@ coverage:
         only_pulls: true
 
 ignore:
-  - "tests"
-  - "test_util.rs"
-  - "test_utils.rs"
-  - "crates/derive/src/stages/test_utils"
+  - "**/test_utils/*"
+  - "**/test_utils*"
+  - "**/test_util*"
+  - "**/tests*"
   - "bin/"
+  - "crates/providers-alloy/src/alloy_providers.rs"  # Flaky testing with online providers
+  - "crates/providers-alloy/src/beacon_client.rs"  # Flaky testing with online providers
 
 # Make comments less noisy
 comment:
