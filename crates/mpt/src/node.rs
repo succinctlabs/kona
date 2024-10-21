@@ -104,14 +104,15 @@ impl TrieNode {
     }
 
     /// Returns the commitment of a [TrieNode::Blinded] node, if `self` is of the
-    /// [TrieNode::Blinded] variant.
+    /// [TrieNode::Blinded] or [TrieNode::Empty] variants.
     ///
     /// ## Returns
     /// - `Some(B256)` - The commitment of the blinded node
     /// - `None` - `self` is not a [TrieNode::Blinded] node
     pub fn blinded_commitment(&self) -> Option<B256> {
         match self {
-            TrieNode::Blinded { commitment } => Some(*commitment),
+            Self::Blinded { commitment } => Some(*commitment),
+            Self::Empty => Some(EMPTY_ROOT_HASH),
             _ => None,
         }
     }
@@ -679,6 +680,12 @@ mod test {
     use alloy_rlp::{Decodable, Encodable, EMPTY_STRING_CODE};
     use alloy_trie::{HashBuilder, Nibbles};
     use rand::prelude::SliceRandom;
+
+    #[test]
+    fn test_empty_blinded() {
+        let trie_node = TrieNode::Empty;
+        assert_eq!(trie_node.blinded_commitment().unwrap(), EMPTY_ROOT_HASH);
+    }
 
     #[test]
     fn test_decode_branch() {
