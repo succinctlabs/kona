@@ -91,7 +91,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="fpp-dev/intro.html"><strong aria-hidden="true">2.</strong> Fault Proof Program Development</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="fpp-dev/env.html"><strong aria-hidden="true">2.1.</strong> Environment</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="fpp-dev/targets.html"><strong aria-hidden="true">2.1.1.</strong> Supported Targets</a></li></ol></li><li class="chapter-item expanded "><a href="fpp-dev/prologue.html"><strong aria-hidden="true">2.2.</strong> Prologue</a></li><li class="chapter-item expanded "><a href="fpp-dev/execution.html"><strong aria-hidden="true">2.3.</strong> Execution</a></li><li class="chapter-item expanded "><a href="fpp-dev/epilogue.html"><strong aria-hidden="true">2.4.</strong> Epilogue</a></li></ol></li><li class="chapter-item expanded "><a href="sdk/intro.html"><strong aria-hidden="true">3.</strong> Kona SDK</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="sdk/fpvm-backend.html"><strong aria-hidden="true">3.1.</strong> FPVM Backend</a></li><li class="chapter-item expanded "><a href="sdk/custom-backend.html"><strong aria-hidden="true">3.2.</strong> Custom Backend</a></li><li class="chapter-item expanded "><a href="sdk/exec-ext.html"><strong aria-hidden="true">3.3.</strong> kona-executor Extensions</a></li></ol></li><li class="chapter-item expanded "><a href="glossary.html" class="active"><strong aria-hidden="true">4.</strong> Glossary</a></li><li class="chapter-item expanded "><a href="CONTRIBUTING.html"><strong aria-hidden="true">5.</strong> Contributing</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="fpp-dev/intro.html"><strong aria-hidden="true">2.</strong> Fault Proof Program Development</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="fpp-dev/env.html"><strong aria-hidden="true">2.1.</strong> Environment</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="fpp-dev/targets.html"><strong aria-hidden="true">2.1.1.</strong> Supported Targets</a></li></ol></li><li class="chapter-item expanded "><a href="fpp-dev/prologue.html"><strong aria-hidden="true">2.2.</strong> Prologue</a></li><li class="chapter-item expanded "><a href="fpp-dev/execution.html"><strong aria-hidden="true">2.3.</strong> Execution</a></li><li class="chapter-item expanded "><a href="fpp-dev/epilogue.html"><strong aria-hidden="true">2.4.</strong> Epilogue</a></li></ol></li><li class="chapter-item expanded "><a href="sdk/intro.html"><strong aria-hidden="true">3.</strong> Kona SDK</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="sdk/fpvm-backend.html"><strong aria-hidden="true">3.1.</strong> FPVM Backend</a></li><li class="chapter-item expanded "><a href="sdk/custom-backend.html"><strong aria-hidden="true">3.2.</strong> Custom Backend</a></li><li class="chapter-item expanded "><a href="sdk/exec-ext.html"><strong aria-hidden="true">3.3.</strong> kona-executor Extensions</a></li><li class="chapter-item expanded "><a href="sdk/pipeline/intro.html"><strong aria-hidden="true">3.4.</strong> kona-derive Pipeline</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="sdk/pipeline/providers.html"><strong aria-hidden="true">3.4.1.</strong> Custom Providers</a></li><li class="chapter-item expanded "><a href="sdk/pipeline/stages.html"><strong aria-hidden="true">3.4.2.</strong> Stage Swapping</a></li><li class="chapter-item expanded "><a href="sdk/pipeline/signaling.html"><strong aria-hidden="true">3.4.3.</strong> Signaling</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="glossary.html" class="active"><strong aria-hidden="true">4.</strong> Glossary</a></li><li class="chapter-item expanded "><a href="CONTRIBUTING.html"><strong aria-hidden="true">5.</strong> Contributing</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -197,7 +197,7 @@
 that is designed to execute verifiable programs.</p>
 <p>Full specification for the <code>cannon</code> &amp; <code>cannon-rs</code> FPVMs, as an example, is available in the <a href="https://specs.optimism.io/experimental/fault-proof/cannon-fault-proof-vm.html#cannon-fault-proof-virtual-machine">Optimism Monorepo</a>.</p>
 <h4 id="fault-proof-program"><a class="header" href="#fault-proof-program">Fault Proof Program</a></h4>
-<p>A <code>Fault Proof Program</code> is a program, commonly written in a general purpose language such as Golang, C, or Rust, that may be compiled down
+<p>A <code>Fault Proof Program</code> is a program, commonly written in a general-purpose language such as Golang, C, or Rust, that may be compiled down
 to a compatible <code>Fault Proof VM</code> target and provably executed on that target VM.</p>
 <p>Examples of <code>Fault Proof Programs</code> include the <a href="https://github.com/ethereum-optimism/optimism/tree/develop/op-program">OP Program</a>, which runs on top of <a href="https://github.com/ethereum-optimism/optimism/tree/develop/cannon"><code>cannon</code></a>, <a href="https://github.com/anton-rs/cannon-rs"><code>cannon-rs</code></a>, and
 <a href="https://github.com/ethereum-optimism/asterisc"><code>asterisc</code></a> to verify a claim about the state of an <a href="https://github.com/ethereum-optimism/optimism">OP Stack</a> layer two.</p>
@@ -212,7 +212,7 @@ datastore. Full specifications for the <code>Preimage ABI</code> are available i
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                        <a rel="prev" href="sdk/exec-ext.html" class="mobile-nav-chapters previous"
+                        <a rel="prev" href="sdk/pipeline/signaling.html" class="mobile-nav-chapters previous"
                             title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                             <i class="fa fa-angle-left"></i>
                         </a>
@@ -228,7 +228,7 @@ datastore. Full specifications for the <code>Preimage ABI</code> are available i
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                <a rel="prev" href="sdk/exec-ext.html" class="nav-chapters previous" title="Previous chapter"
+                <a rel="prev" href="sdk/pipeline/signaling.html" class="nav-chapters previous" title="Previous chapter"
                     aria-label="Previous chapter" aria-keyshortcuts="Left">
                     <i class="fa fa-angle-left"></i>
                 </a>
