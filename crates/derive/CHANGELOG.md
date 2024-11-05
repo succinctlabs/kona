@@ -6,6 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.6](https://github.com/moongate-forks/kona/compare/kona-derive-v0.0.5...kona-derive-v0.0.6) - 2024-11-05
+
+### Added
+
+- *(derive)* `From<BlobProviderError> for PipelineErrorKind` ([#780](https://github.com/moongate-forks/kona/pull/780))
+- *(client)* Remove `anyhow` ([#779](https://github.com/moongate-forks/kona/pull/779))
+- *(derive)* sources docs ([#754](https://github.com/moongate-forks/kona/pull/754))
+
+### Fixed
+
+- *(derive)* hoist types out of traits ([#781](https://github.com/moongate-forks/kona/pull/781))
+- *(client)* Trace extension support ([#778](https://github.com/moongate-forks/kona/pull/778))
+- *(derive)* use signal value updated with system config. ([#776](https://github.com/moongate-forks/kona/pull/776))
+
+### Other
+
+- Only fill blob data when there is no calldata ([#764](https://github.com/moongate-forks/kona/pull/764))
+- *(derive)* touchup kona-derive readme ([#762](https://github.com/moongate-forks/kona/pull/762))
+- *(derive)* Error Exports ([#758](https://github.com/moongate-forks/kona/pull/758))
+- *(derive)* Cleanup Exports ([#757](https://github.com/moongate-forks/kona/pull/757))
+
 ## [0.0.5](https://github.com/anton-rs/kona/compare/kona-derive-v0.0.4...kona-derive-v0.0.5) - 2024-10-29
 
 ### Added
