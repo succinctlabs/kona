@@ -175,6 +175,7 @@ where
     async fn step(&mut self, cursor: L2BlockInfo) -> StepResult {
         match self.attributes.next_attributes(cursor).await {
             Ok(a) => {
+                println!("Prepared L2 attributes: {:?}", a);
                 trace!(target: "pipeline", "Prepared L2 attributes: {:?}", a);
                 self.prepared.push_back(a);
                 StepResult::PreparedAttributes

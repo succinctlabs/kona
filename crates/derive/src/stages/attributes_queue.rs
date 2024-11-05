@@ -73,6 +73,7 @@ where
     /// Loads a [SingleBatch] from the [AttributesProvider] if needed.
     pub async fn load_batch(&mut self, parent: L2BlockInfo) -> PipelineResult<SingleBatch> {
         if self.batch.is_none() {
+            // TODO: This is the expensive function.
             let batch = self.prev.next_batch(parent).await?;
             self.batch = Some(batch);
             self.is_last_in_span = self.prev.is_last_in_span();
@@ -86,14 +87,21 @@ where
         parent: L2BlockInfo,
     ) -> PipelineResult<OpAttributesWithParent> {
         crate::timer!(START, STAGE_ADVANCE_RESPONSE_TIME, &["attributes_queue"], timer);
+        // This is the expensive operation in each derivation.
+        println!("cycle-tracker-report-start: load-batch");
         let batch = match self.load_batch(parent).await {
-            Ok(batch) => batch,
+            Ok(batch) => {
+                println!("cycle-tracker-report-end: load-batch");
+                batch
+            },
             Err(e) => {
+                println!("cycle-tracker-report-end: load-batch");
                 crate::timer!(DISCARD, timer);
                 return Err(e);
             }
         };
 
+        println!("cycle-tracker-start: create-next-attributes");
         // Construct the payload attributes from the loaded batch.
         let attributes = match self.create_next_attributes(batch, parent).await {
             Ok(attributes) => attributes,
@@ -102,6 +110,8 @@ where
                 return Err(e);
             }
         };
+        println!("cycle-tracker-end: create-next-attributes");
+
         let populated_attributes =
             OpAttributesWithParent { attributes, parent, is_last_in_span: self.is_last_in_span };
 

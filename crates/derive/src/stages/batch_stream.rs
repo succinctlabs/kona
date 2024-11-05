@@ -118,6 +118,7 @@ where
         parent: L2BlockInfo,
         l1_origins: &[BlockInfo],
     ) -> PipelineResult<Batch> {
+        println!("BATCH STREAM NEXT BATCH");
         // If the stage is not active, "pass" the next batch
         // through this stage to the BatchQueue stage.
         if !self.is_active()? {

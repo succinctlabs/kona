@@ -111,6 +111,7 @@ where
     }
 
     async fn next_batch(&mut self) -> PipelineResult<Batch> {
+        println!("CHANNEL READER NEXT BATCH");
         crate::timer!(START, STAGE_ADVANCE_RESPONSE_TIME, &["channel_reader"], timer);
         if let Err(e) = self.set_batch_reader().await {
             debug!(target: "channel-reader", "Failed to set batch reader: {:?}", e);
@@ -118,6 +119,7 @@ where
             crate::timer!(DISCARD, timer);
             return Err(e);
         }
+        println!("cycle-tracker-start: channel-reader-next-batch");
         match self
             .next_batch
             .as_mut()
@@ -125,8 +127,12 @@ where
             .next_batch(self.cfg.as_ref())
             .ok_or(PipelineError::NotEnoughData.temp())
         {
-            Ok(batch) => Ok(batch),
+            Ok(batch) => {
+                println!("cycle-tracker-end: channel-reader-next-batch");
+                Ok(batch)
+            },
             Err(e) => {
+                println!("cycle-tracker-end: channel-reader-next-batch");
                 self.next_channel();
                 crate::timer!(DISCARD, timer);
                 Err(e)

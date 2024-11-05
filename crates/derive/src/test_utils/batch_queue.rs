@@ -44,6 +44,7 @@ impl BatchQueueProvider for TestBatchQueueProvider {
     }
 
     async fn next_batch(&mut self, _: L2BlockInfo, _: &[BlockInfo]) -> PipelineResult<Batch> {
+        println!("BATCH QUEUE PROVIDER NEXT BATCH");
         self.batches.pop().ok_or(PipelineError::Eof.temp())?
     }
 }

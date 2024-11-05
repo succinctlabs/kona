@@ -83,6 +83,7 @@ impl ResettableStage for TestAttributesProvider {
 #[async_trait]
 impl AttributesProvider for TestAttributesProvider {
     async fn next_batch(&mut self, _parent: L2BlockInfo) -> PipelineResult<SingleBatch> {
+        println!("ATTRIBUTES PROVIDER NEXT BATCH");
         self.batches.pop().ok_or(PipelineError::Eof.temp())?
     }
 

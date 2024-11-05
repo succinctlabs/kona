@@ -54,6 +54,7 @@ impl BatchStreamProvider for TestBatchStreamProvider {
     fn flush(&mut self) {}
 
     async fn next_batch(&mut self) -> PipelineResult<Batch> {
+        println!("BATCH STREAM PROVIDER NEXT BATCH");
         self.batches.pop().ok_or(PipelineError::Eof.temp())?
     }
 }
