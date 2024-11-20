@@ -248,7 +248,7 @@ let pipeline = PipelineBuilder::new()
 <blockquote>
 <p>Notice</p>
 <p>The only required method for the <a href="https://docs.rs/kona-derive/latest/kona_derive/traits/trait.DataAvailabilityProvider.html"><code>DataAvailabilityProvider</code></a>
-trait is the <a href="https://docs.rs/kona-derive/latest/kona_derive/traits/trait.DataAvailabilityProvider.html#tymethod.open_data"><code>open_data</code></a> method.</p>
+trait is the <a href="https://docs.rs/kona-derive/latest/kona_derive/traits/trait.DataAvailabilityProvider.html#tymethod.next"><code>next</code></a> method.</p>
 </blockquote>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -267,21 +267,10 @@ pub struct ExampleAvail {
 }
 
 #[async_trait]
-impl AsyncIterator for ExampleDataIterator {
-    type Item = Bytes;
-
-    async fn next(&amp;mut self) -&gt; PipelineResult&lt;Self::Item&gt; {
-      todo!("return the next bytes")
-    }
-}
-
-
-#[async_trait]
 impl DataAvailabilityProvider for ExampleAvail {
    type Item = Bytes;
-   type DataIter = ExampleDataIterator;
 
-   async fn open_data(&amp;self, block_ref: &amp;BlockInfo) -&gt; PipelineResult&lt;Self::DataIter&gt; {
+   async fn next(&amp;self, block_ref: &amp;BlockInfo) -&gt; PipelineResult&lt;Self::Item&gt; {
       todo!("return an AsyncIterator implementation here")
    }
 }

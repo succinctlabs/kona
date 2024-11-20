@@ -647,7 +647,7 @@ let pipeline = PipelineBuilder::new()
 let provider = ...;
 let hinter = ...;
 
-let executor = StatelessL2BlcokExecutor::builder(&amp;cfg, provider, hinter)
+let executor = StatelessL2BlockExecutor::builder(&amp;cfg, provider, hinter)
    .with_parent_header(...)
    .build();
 
@@ -808,13 +808,11 @@ attributes.</p>
 <p><a href="https://crates.io/crates/kona-derive"><code>kona-derive</code></a> provides a <a href="https://docs.rs/kona-derive/latest/kona_derive/pipeline/struct.PipelineBuilder.html"><code>PipelineBuilder</code></a> to abstract the complexity
 of generics away from the downstream consumers. Below we provide an example for using
 the <a href="https://docs.rs/kona-derive/latest/kona_derive/pipeline/struct.PipelineBuilder.html"><code>PipelineBuilder</code></a> to instantiate a <a href="https://docs.rs/kona-derive/latest/kona_derive/pipeline/struct.DerivationPipeline.html"><code>DerivationPipeline</code></a>.</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// Imports
+<pre><code class="language-rust ignore">// Imports
 use std::sync::Arc;
 use op_alloy_protocol::BlockInfo;
 use op_alloy_genesis::RollupConfig;
-use kona_derive_alloy::prelude::*;
+use superchain_derive::*;
 
 // Use a default rollup config.
 let rollup_config = Arc::new(RollupConfig::default());
@@ -858,8 +856,7 @@ let pipeline = PipelineBuilder::new()
    .build();
 
 assert_eq!(pipeline.rollup_config, rollup_config);
-assert_eq!(pipeline.origin(), Some(origin));
-<span class="boring">}</span></code></pre></pre>
+assert_eq!(pipeline.origin(), Some(origin));</code></pre>
 <h2 id="producing-payload-attributes"><a class="header" href="#producing-payload-attributes">Producing Payload Attributes</a></h2>
 <p>Since the <a href="https://docs.rs/kona-derive/latest/kona_derive/traits/trait.Pipeline.html"><code>Pipeline</code></a> trait extends the <a href="https://doc.rust-lang.org/nightly/core/iter/trait.Iterator.html"><code>Iterator</code></a> trait,
 producing <a href="https://docs.rs/op-alloy-rpc-types-engine/latest/op_alloy_rpc_types_engine/struct.OpAttributesWithParent.html"><code>OpAttributesWithParent</code></a> is as simple as as calling
@@ -1044,7 +1041,7 @@ let pipeline = PipelineBuilder::new()
 <blockquote>
 <p>Notice</p>
 <p>The only required method for the <a href="https://docs.rs/kona-derive/latest/kona_derive/traits/trait.DataAvailabilityProvider.html"><code>DataAvailabilityProvider</code></a>
-trait is the <a href="https://docs.rs/kona-derive/latest/kona_derive/traits/trait.DataAvailabilityProvider.html#tymethod.open_data"><code>open_data</code></a> method.</p>
+trait is the <a href="https://docs.rs/kona-derive/latest/kona_derive/traits/trait.DataAvailabilityProvider.html#tymethod.next"><code>next</code></a> method.</p>
 </blockquote>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1063,21 +1060,10 @@ pub struct ExampleAvail {
 }
 
 #[async_trait]
-impl AsyncIterator for ExampleDataIterator {
-    type Item = Bytes;
-
-    async fn next(&amp;mut self) -&gt; PipelineResult&lt;Self::Item&gt; {
-      todo!("return the next bytes")
-    }
-}
-
-
-#[async_trait]
 impl DataAvailabilityProvider for ExampleAvail {
    type Item = Bytes;
-   type DataIter = ExampleDataIterator;
 
-   async fn open_data(&amp;self, block_ref: &amp;BlockInfo) -&gt; PipelineResult&lt;Self::DataIter&gt; {
+   async fn next(&amp;self, block_ref: &amp;BlockInfo) -&gt; PipelineResult&lt;Self::Item&gt; {
       todo!("return an AsyncIterator implementation here")
    }
 }
