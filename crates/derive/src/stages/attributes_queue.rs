@@ -71,22 +71,27 @@ where
         &mut self,
         parent: L2BlockInfo,
     ) -> PipelineResult<OpAttributesWithParent> {
+        info!(target: "attributes-queue", "[RATAN] Loading batch for L2 block #{}", parent.block_info.number);
         let batch = match self.load_batch(parent).await {
             Ok(batch) => batch,
             Err(e) => {
                 return Err(e);
             }
         };
+        info!(target: "attributes-queue", "[RATAN] Loaded batch for L2 block #{}", parent.block_info.number);
 
         // Construct the payload attributes from the loaded batch.
         let attributes = match self.create_next_attributes(batch, parent).await {
             Ok(attributes) => attributes,
             Err(e) => {
+                error!(target: "attributes-queue", "[RATAN] Failed to create attributes for L2 block #{}: {:?}", parent.block_info.number, e);
                 return Err(e);
             }
         };
+        info!(target: "attributes-queue", "[RATAN] Created attributes for L2 block #{}", parent.block_info.number);
         let populated_attributes =
             OpAttributesWithParent { attributes, parent, is_last_in_span: self.is_last_in_span };
+        info!(target: "attributes-queue", "[RATAN] Populated attributes for L2 block #{}", parent.block_info.number);
 
         // Clear out the local state once payload attributes are prepared.
         self.batch = None;
@@ -106,15 +111,20 @@ where
             return Err(ResetError::BadParentHash(batch.parent_hash, parent.block_info.hash).into());
         }
 
+        info!(target: "attributes-queue", "[RATAN] Sanity checking parent hash for L2 block #{}", parent.block_info.number);
+
         // Sanity check timestamp
         let actual = parent.block_info.timestamp + self.cfg.block_time;
         if actual != batch.timestamp {
             return Err(ResetError::BadTimestamp(batch.timestamp, actual).into());
         }
-
+        info!(target: "attributes-queue", "[RATAN] Sanity checked timestamp for L2 block #{}", parent.block_info.number);
+        
         // Prepare the payload attributes
         let tx_count = batch.transactions.len();
         let mut attributes = self.builder.prepare_payload_attributes(parent, batch.epoch()).await?;
+        info!(target: "attributes-queue", "[RATAN] Prepared payload attributes for L2 block #{}", parent.block_info.number);
+
         attributes.no_tx_pool = Some(true);
         match attributes.transactions {
             Some(ref mut txs) => txs.extend(batch.transactions),

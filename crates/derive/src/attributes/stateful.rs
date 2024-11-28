@@ -60,18 +60,24 @@ where
         let l1_header;
         let deposit_transactions: Vec<Bytes>;
 
+        info!(target: "attributes-builder", "[RATAN] Preparing payload attributes for L2 block #{}", l2_parent.block_info.number);
+
         let mut sys_config = self
             .config_fetcher
             .system_config_by_number(l2_parent.block_info.number, self.rollup_cfg.clone())
             .await
             .map_err(Into::into)?;
 
+        info!(target: "attributes-builder", "[RATAN] Fetched system config for L2 block #{}", l2_parent.block_info.number);
+
         // If the L1 origin changed in this block, then we are in the first block of the epoch.
         // In this case we need to fetch all transaction receipts from the L1 origin block so
         // we can scan for user deposits.
         let sequence_number = if l2_parent.l1_origin.number != epoch.number {
+            info!(target: "attributes-builder", "[RATAN] Fetching L1 header for L2 block #{}", l2_parent.block_info.number);
             let header =
                 self.receipts_fetcher.header_by_hash(epoch.hash).await.map_err(Into::into)?;
+            info!(target: "attributes-builder", "[RATAN] Fetched L1 header for L2 block #{}", l2_parent.block_info.number);
             if l2_parent.l1_origin.hash != header.parent_hash {
                 return Err(PipelineErrorKind::Reset(
                     BuilderError::BlockMismatchEpochReset(
@@ -82,12 +88,15 @@ where
                     .into(),
                 ));
             }
+            info!(target: "attributes-builder", "[RATAN] Fetching receipts for L2 block #{}", l2_parent.block_info.number);
             let receipts =
                 self.receipts_fetcher.receipts_by_hash(epoch.hash).await.map_err(Into::into)?;
+            info!(target: "attributes-builder", "[RATAN] Deriving deposits for L2 block #{}", l2_parent.block_info.number);
             let deposits =
                 derive_deposits(epoch.hash, &receipts, self.rollup_cfg.deposit_contract_address)
                     .await
                     .map_err(|e| PipelineError::BadEncoding(e).crit())?;
+            info!(target: "attributes-builder", "[RATAN] Updating system config for L2 block #{}", l2_parent.block_info.number);
             sys_config
                 .update_with_receipts(
                     &receipts,
@@ -95,23 +104,27 @@ where
                     self.rollup_cfg.is_ecotone_active(header.timestamp),
                 )
                 .map_err(|e| PipelineError::SystemConfigUpdate(e).crit())?;
+            info!(target: "attributes-builder", "[RATAN] Updated system config for L2 block #{}", l2_parent.block_info.number);
             l1_header = header;
             deposit_transactions = deposits;
             0
         } else {
+            info!(target: "attributes-builder", "[RATAN] Checking L1 origin for L2 block #{}", l2_parent.block_info.number);
             #[allow(clippy::collapsible_else_if)]
             if l2_parent.l1_origin.hash != epoch.hash {
                 return Err(PipelineErrorKind::Reset(
                     BuilderError::BlockMismatch(epoch, l2_parent.l1_origin).into(),
                 ));
             }
-
+            info!(target: "attributes-builder", "[RATAN] Fetching L1 header for L2 block #{}", l2_parent.block_info.number);
             let header =
                 self.receipts_fetcher.header_by_hash(epoch.hash).await.map_err(Into::into)?;
             l1_header = header;
             deposit_transactions = vec![];
             l2_parent.seq_num + 1
         };
+
+        info!(target: "attributes-builder", "[RATAN] Selected L1 origin for L2 block #{}", l2_parent.block_info.number);
 
         // Sanity check the L1 origin was correctly selected to maintain the time invariant
         // between L1 and L2.
@@ -127,16 +140,19 @@ where
                 .into(),
             ));
         }
+        info!(target: "attributes-builder", "[RATAN] Sanity checked time invariant for L2 block #{}", l2_parent.block_info.number);
 
         let mut upgrade_transactions: Vec<Bytes> = vec![];
         if self.rollup_cfg.is_ecotone_active(next_l2_time) &&
             !self.rollup_cfg.is_ecotone_active(l2_parent.block_info.timestamp)
         {
+            info!(target: "attributes-builder", "[RATAN] Adding ecotone upgrade transactions for L2 block #{}", l2_parent.block_info.number);
             upgrade_transactions = Hardforks::ECOTONE.txs().collect();
         }
         if self.rollup_cfg.is_fjord_active(next_l2_time) &&
             !self.rollup_cfg.is_fjord_active(l2_parent.block_info.timestamp)
         {
+            info!(target: "attributes-builder", "[RATAN] Adding fjord upgrade transactions for L2 block #{}", l2_parent.block_info.number);
             upgrade_transactions.append(&mut Hardforks::FJORD.txs().collect());
         }
 
@@ -151,9 +167,10 @@ where
         .map_err(|e| {
             PipelineError::AttributesBuilder(BuilderError::Custom(e.to_string())).crit()
         })?;
+        info!(target: "attributes-builder", "[RATAN] Built and encoded L1 info transaction for L2 block #{}", l2_parent.block_info.number);
         let mut encoded_l1_info_tx = Vec::with_capacity(l1_info_tx_envelope.length());
         l1_info_tx_envelope.encode_2718(&mut encoded_l1_info_tx);
-
+        info!(target: "attributes-builder", "[RATAN] Encoded L1 info transaction for L2 block #{}", l2_parent.block_info.number);
         let mut txs =
             Vec::with_capacity(1 + deposit_transactions.len() + upgrade_transactions.len());
         txs.push(encoded_l1_info_tx.into());

@@ -59,6 +59,7 @@ impl<T: CommsClient> OracleL2ChainProvider<T> {
 
         // Check if the block number is in range. If not, we can fail early.
         if block_number > header.number {
+            error!(target: "chain-provider", "[RATAN L2] Block number {} is past head {}", block_number, header.number);
             return Err(OracleProviderError::BlockNumberPastHead(block_number, header.number));
         }
 

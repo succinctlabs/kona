@@ -75,6 +75,7 @@ where
         mut target: u64,
     ) -> DriverResult<(u64, B256), E::Error> {
         loop {
+            info!(target: "client", "Deriving L2 block #{} with current safe head #{}", target, self.cursor.l2_safe_head().block_info.number);
             // Check if we have reached the target block number.
             if self.cursor.l2_safe_head().block_info.number >= target {
                 info!(target: "client", "Derivation complete, reached L2 safe head.");
