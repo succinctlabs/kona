@@ -41,29 +41,38 @@ impl<CP: ChainProvider + Send> CalldataSource<CP> {
             return Ok(());
         }
 
-        let (_, txs) =
+        let (_, mut txs) =
             self.chain_provider.block_info_and_transactions_by_hash(block_ref.hash).await?;
 
-        self.calldata = txs
-            .iter()
-            .filter_map(|tx| {
-                let (tx_kind, data) = match tx {
-                    TxEnvelope::Legacy(tx) => (tx.tx().to(), tx.tx().input()),
-                    TxEnvelope::Eip2930(tx) => (tx.tx().to(), tx.tx().input()),
-                    TxEnvelope::Eip1559(tx) => (tx.tx().to(), tx.tx().input()),
-                    _ => return None,
-                };
-                let to = tx_kind?;
+        self.calldata = txs.try_fold(VecDeque::new(), |mut acc, tx| {
+            let tx = tx?;
+            let (tx_kind, data) = match &tx {
+                TxEnvelope::Legacy(tx) => (tx.tx().to(), tx.tx().input()),
+                TxEnvelope::Eip2930(tx) => (tx.tx().to(), tx.tx().input()),
+                TxEnvelope::Eip1559(tx) => (tx.tx().to(), tx.tx().input()),
+                _ => return Ok(acc),
+            };
 
-                if to != self.batch_inbox_address {
-                    return None;
+            let to = match tx_kind {
+                Some(to) => to,
+                None => return Ok(acc),
+            };
+
+            if to != self.batch_inbox_address {
+                return Ok(acc);
+            }
+            if let Ok(signer) = tx.recover_signer() {
+                if signer != self.signer {
+                    return Ok(acc);
                 }
-                if tx.recover_signer().ok()? != self.signer {
-                    return None;
-                }
-                Some(data.to_vec().into())
-            })
-            .collect::<VecDeque<_>>();
+            } else {
+                return Ok(acc);
+            }
+
+            acc.push_back(data.to_vec().into());
+
+            Ok(acc)
+        })?;
 
         self.open = true;
 

@@ -56,7 +56,7 @@ pub type OracleAttributesQueue<DAP, O> = AttributesQueue<
 #[derive(Debug)]
 pub struct OraclePipeline<O, B>
 where
-    O: CommsClient + FlushableCache + Send + Sync + Debug,
+    O: CommsClient + FlushableCache + Send + Sync + Debug + 'static,
     B: BlobProvider + Send + Sync + Debug + Clone,
 {
     /// The internal derivation pipeline.

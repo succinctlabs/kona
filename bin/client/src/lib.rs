@@ -50,8 +50,8 @@ pub enum FaultProofProgramError {
 #[inline]
 pub async fn run<P, H>(oracle_client: P, hint_client: H) -> Result<(), FaultProofProgramError>
 where
-    P: PreimageOracleClient + Send + Sync + Debug + Clone,
-    H: HintWriterClient + Send + Sync + Debug + Clone,
+    P: PreimageOracleClient + Send + Sync + Debug + Clone + 'static,
+    H: HintWriterClient + Send + Sync + Debug + Clone + 'static,
 {
     const ORACLE_LRU_SIZE: usize = 1024;
 

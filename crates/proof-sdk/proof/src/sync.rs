@@ -19,7 +19,7 @@ pub async fn new_pipeline_cursor<O>(
     l2_chain_provider: &mut OracleL2ChainProvider<O>,
 ) -> Result<PipelineCursor, OracleProviderError>
 where
-    O: CommsClient + FlushableCache + FlushableCache + Send + Sync + Debug,
+    O: CommsClient + FlushableCache + FlushableCache + Send + Sync + Debug + 'static,
 {
     let safe_head_info = l2_chain_provider.l2_block_info_by_number(safe_header.number).await?;
     let l1_origin = chain_provider.block_info_by_number(safe_head_info.l1_origin.number).await?;

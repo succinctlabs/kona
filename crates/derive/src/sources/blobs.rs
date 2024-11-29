@@ -56,11 +56,15 @@ where
         }
     }
 
-    fn extract_blob_data(&self, txs: Vec<TxEnvelope>) -> (Vec<BlobData>, Vec<IndexedBlobHash>) {
+    fn extract_blob_data<E: ToString>(
+        &self,
+        txs: impl Iterator<Item = Result<TxEnvelope, E>>,
+    ) -> Result<(Vec<BlobData>, Vec<IndexedBlobHash>), BlobProviderError> {
         let mut index: u64 = 0;
         let mut data = Vec::new();
         let mut hashes = Vec::new();
         for tx in txs {
+            let tx = tx.map_err(|err| BlobProviderError::Backend(err.to_string()))?;
             let (tx_kind, calldata, blob_hashes) = match &tx {
                 TxEnvelope::Legacy(tx) => (tx.tx().to(), tx.tx().input.clone(), None),
                 TxEnvelope::Eip2930(tx) => (tx.tx().to(), tx.tx().input.clone(), None),
@@ -113,7 +117,7 @@ where
                 index += 1;
             }
         }
-        (data, hashes)
+        Ok((data, hashes))
     }
 
     /// Loads blob data into the source if it is not open.
@@ -122,13 +126,13 @@ where
             return Ok(());
         }
 
-        let info = self
+        let (_, txs) = self
             .chain_provider
             .block_info_and_transactions_by_hash(block_ref.hash)
             .await
             .map_err(|e| BlobProviderError::Backend(e.to_string()))?;
 
-        let (mut data, blob_hashes) = self.extract_blob_data(info.1);
+        let (mut data, blob_hashes) = self.extract_blob_data(txs)?;
 
         // If there are no hashes, set the calldata and return.
         if blob_hashes.is_empty() {

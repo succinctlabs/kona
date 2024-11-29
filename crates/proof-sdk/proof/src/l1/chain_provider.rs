@@ -29,7 +29,7 @@ impl<T: CommsClient> OracleL1ChainProvider<T> {
 }
 
 #[async_trait]
-impl<T: CommsClient + Sync + Send> ChainProvider for OracleL1ChainProvider<T> {
+impl<T: CommsClient + Sync + Send + 'static> ChainProvider for OracleL1ChainProvider<T> {
     type Error = OracleProviderError;
 
     async fn header_by_hash(&mut self, hash: B256) -> Result<Header, Self::Error> {
@@ -101,7 +101,8 @@ impl<T: CommsClient + Sync + Send> ChainProvider for OracleL1ChainProvider<T> {
     async fn block_info_and_transactions_by_hash(
         &mut self,
         hash: B256,
-    ) -> Result<(BlockInfo, Vec<TxEnvelope>), Self::Error> {
+    ) -> Result<(BlockInfo, Box<dyn Iterator<Item = Result<TxEnvelope, Self::Error>>>), Self::Error>
+    {
         // Fetch the block header to construct the block info.
         let header = self.header_by_hash(hash).await?;
         let block_info = BlockInfo {
@@ -121,17 +122,14 @@ impl<T: CommsClient + Sync + Send> ChainProvider for OracleL1ChainProvider<T> {
             .map_err(OracleProviderError::TrieWalker)?;
 
         // Decode the transactions within the transactions trie.
-        let transactions = trie_walker
-            .into_iter()
-            .map(|(_, rlp)| {
-                // note: not short-handed for error type coersion w/ `?`.
-                let rlp = TxEnvelope::decode_2718(&mut rlp.as_ref())?;
-                Ok(rlp)
-            })
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(OracleProviderError::Rlp)?;
+        let transactions = trie_walker.into_iter().map(|(_, rlp)| {
+            // note: not short-handed for error type coersion w/ `?`.
 
-        Ok((block_info, transactions))
+            TxEnvelope::decode_2718(&mut rlp.as_ref())
+                .map_err(|err| OracleProviderError::Rlp(err.into()))
+        });
+
+        Ok((block_info, Box::new(transactions)))
     }
 }
 

@@ -30,7 +30,7 @@ pub trait ChainProvider {
     async fn block_info_and_transactions_by_hash(
         &mut self,
         hash: B256,
-    ) -> Result<(BlockInfo, Vec<TxEnvelope>), Self::Error>;
+    ) -> Result<(BlockInfo, Box<dyn Iterator<Item = Result<TxEnvelope, Self::Error>>>), Self::Error>;
 }
 
 /// Describes the functionality of a data source that fetches safe blocks.

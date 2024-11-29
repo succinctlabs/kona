@@ -133,7 +133,8 @@ impl ChainProvider for TestChainProvider {
     async fn block_info_and_transactions_by_hash(
         &mut self,
         hash: B256,
-    ) -> Result<(BlockInfo, Vec<TxEnvelope>), Self::Error> {
+    ) -> Result<(BlockInfo, Box<dyn Iterator<Item = Result<TxEnvelope, Self::Error>>>), Self::Error>
+    {
         let block = self
             .blocks
             .iter()
@@ -146,7 +147,7 @@ impl ChainProvider for TestChainProvider {
             .find(|(h, _)| *h == hash)
             .map(|(_, txs)| txs.clone())
             .unwrap_or_default();
-        Ok((block, txs))
+        Ok((block, Box::new(txs.into_iter().map(Ok))))
     }
 }
 
