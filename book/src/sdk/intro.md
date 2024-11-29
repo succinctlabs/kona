@@ -1,7 +1,7 @@
 # Kona SDK
 
 Welcome to the Kona SDK, a powerful set of libraries designed to revolutionize the way developers build proofs for the
-OP Stack STF on top of the OP Stack's FPVMs and other verifiable backends like [SP-1][sp-1], [Risc0][rzero], 
+OP Stack STF on top of the OP Stack's FPVMs and other verifiable backends like [SP1][sp1], [Risc0][rzero], 
 [Intel TDX][tdx], and [AMD SEV-SNP][sev-snp]. At its core, Kona is built on the principles of modularity, extensibility,
 and developer empowerment.
 
@@ -9,7 +9,7 @@ and developer empowerment.
 
 The kona repository is more than a fault proof program for the OP Stack — it's an ecosystem of interoperable components,
 each crafted with reusability and extensibility as primary goals. While we provide 
-{{#template ../../templates/glossary-link.md root=./ ref=fault-proof-vm text=Fault Proof VM}} and "online" backends
+{{#template ../../templates/glossary-link.md root=../ ref=fault-proof-vm text=Fault Proof VM}} and "online" backends
 for key components like `kona-derive` and `kona-executor`, the true power of `kona` lies in its adaptability.
 
 ## Extend Without Forking
@@ -28,7 +28,7 @@ In this section of the developer book, we'll dive deep into the Kona SDK, coveri
 Whether you're looking to use Kona as-is, extend its functionality, or create entirely new programs based on its libraries,
 this guide is intended to provide you with the knowledge and tools you need to succeed.
 
-[sp-1]: https://github.com/succinct-labs/sp-1
+[sp1]: https://github.com/succinctlabs/sp1
 [rzero]: https://github.com/risc0/risc0 
 [tdx]: https://www.intel.com/content/www/us/en/developer/tools/trust-domain-extensions/documentation.html
 [sev-snp]: https://www.amd.com/en/developer/sev.html

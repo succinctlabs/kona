@@ -36,7 +36,7 @@ through custom implementations of these data source traits.
 program, implementing both `kona-derive` and `kona-executor`'s data source traits backed by [sp1_lib::io](https://docs.rs/sp1-lib/latest/sp1_lib/io/index.html)
 in order to:
 
-1. Execute `kona-client` verbatim, proving a single block's derivation and execution on SP-1.
+1. Execute `kona-client` verbatim, proving a single block's derivation and execution on SP1.
 1. Derive and execute an entire [Span Batch](https://specs.optimism.io/protocol/delta/span-batches.html#span-batches)
    worth of L2 blocks, using `kona-derive` and `kona-executor`.
 
@@ -93,8 +93,8 @@ Before getting started, we need to create custom implementations of the followin
 
 | Trait                                                                                | Description                                                                                                                                                                                                                                                                                                                        |
 | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`TrieDBFetcher`](https://docs.rs/kona-mpt/latest/kona_mpt/trait.TrieDBFetcher.html) | The `TrieDBFetcher` trait describes the interface for fetching trie node preimages and chain information while executing a payload on the L2 chain.                                                                                                                                                                                |
-| [`TrieDBHinter`](https://docs.rs/kona-mpt/latest/kona_mpt/trait.TrieDBHinter.html)   | The `TrieDBHinter` trait describes the interface for requesting the host program to prepare trie proof preimages for the client's consumption. For targets with upfront witness generation, i.e. zkVMs, a no-op hinter is exported as [`NoopTrieDBHinter`](https://docs.rs/kona-mpt/latest/kona_mpt/struct.NoopTrieDBHinter.html). |
+| [`TrieProvider`](https://docs.rs/kona-mpt/latest/kona_mpt/trait.TrieProvider.html) | The `TrieProvider` trait describes the interface for fetching trie node preimages and chain information while executing a payload on the L2 chain.                                                                                                                                                                                |
+| [`TrieHinter`](https://docs.rs/kona-mpt/latest/kona_mpt/trait.TrieHinter.html)   | The `TrieHinter` trait describes the interface for requesting the host program to prepare trie proof preimages for the client's consumption. For targets with upfront witness generation, i.e. zkVMs, a no-op hinter is exported as [`NoopTrieHinter`](https://docs.rs/kona-mpt/latest/kona_mpt/struct.NoopTrieHinter.html). |
 
 Once we have those, the `StatelessL2BlockExecutor` can be constructed like so:
 

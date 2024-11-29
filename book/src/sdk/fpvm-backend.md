@@ -6,7 +6,7 @@
 Kona is effectively split into two parts:
 
 - OP Stack state transition logic (`kona-derive`, `kona-executor`, `kona-mpt`)
-- {{#template ../../templates/glossary-link.md root=./ ref=fault-proof-vm text=Fault Proof VM}} IO and utilities
+- {{#template ../../templates/glossary-link.md root=../ ref=fault-proof-vm text=Fault Proof VM}} IO and utilities
   (`kona-common`, `kona-common-proc`, `kona-preimage`)
 
 This section of the book focuses on the usage of `kona-common` and `kona-preimage` to facilitate host<->client
