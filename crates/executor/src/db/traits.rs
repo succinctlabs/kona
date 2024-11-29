@@ -42,7 +42,7 @@ impl TrieProvider for NoopTrieDBProvider {
     type Error = String;
 
     fn trie_node_by_hash(&self, _key: B256) -> Result<TrieNode, Self::Error> {
-        Ok(TrieNode::Empty)
+        Ok(TrieNode::default())
     }
 }
 

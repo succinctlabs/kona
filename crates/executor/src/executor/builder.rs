@@ -1,5 +1,7 @@
 //! Contains the builder pattern for the [StatelessL2BlockExecutor].
 
+use core::cell::RefCell;
+
 use super::StatelessL2BlockExecutor;
 use crate::db::{TrieDB, TrieDBProvider};
 use alloy_consensus::{Header, Sealable, Sealed};
@@ -26,6 +28,7 @@ where
     hinter: H,
     /// The parent [Header] to begin execution from.
     parent_header: Option<Sealed<Header>>,
+    trie_db: Option<&'a mut TrieDB<F, H>>,
     /// The [KonaHandleRegister] to use during execution.
     handler_register: Option<KonaHandleRegister<F, H>>,
 }
@@ -37,12 +40,24 @@ where
 {
     /// Instantiate a new builder with the given [RollupConfig].
     pub fn new(config: &'a RollupConfig, provider: F, hinter: H) -> Self {
-        Self { config, provider, hinter, parent_header: None, handler_register: None }
+        Self {
+            config,
+            provider,
+            hinter,
+            parent_header: None,
+            trie_db: None,
+            handler_register: None,
+        }
     }
 
     /// Set the [Header] to begin execution from.
     pub fn with_parent_header(mut self, parent_header: Sealed<Header>) -> Self {
         self.parent_header = Some(parent_header);
+        self
+    }
+
+    pub fn with_trie_db(mut self, trie_db: &'a mut TrieDB<F, H>) -> Self {
+        self.trie_db = Some(trie_db);
         self
     }
 
@@ -59,8 +74,12 @@ where
             default_header.seal_slow()
         });
 
-        let trie_db =
-            TrieDB::new(parent_header.state_root, parent_header, self.provider, self.hinter);
+        let trie_db = self.trie_db.unwrap_or(&mut TrieDB::new(
+            parent_header.state_root,
+            parent_header,
+            self.provider,
+            self.hinter,
+        ));
         StatelessL2BlockExecutor {
             config: self.config,
             trie_db,

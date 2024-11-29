@@ -95,6 +95,16 @@ op-alloy-protocol = { version = "0.6.8", default-features = false }
 op-alloy-consensus = { version = "0.6.8", default-features = false }
 op-alloy-rpc-types-engine = { version = "0.6.8", default-features = false }
 
+# Reth
+reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.1.2", default-features = false, features = [
+    "alloy-compat",
+    "optimism",
+    "std",
+] }
+reth-trie = { git = "https://github.com/paradigmxyz/reth", tag = "v1.1.2", default-features = false }
+reth-execution-types = { git = "https://github.com/paradigmxyz/reth", tag = "v1.1.2", default-features = false }
+
+
 # General
 lru = "0.12.4"
 spin = "0.9.8"
@@ -132,7 +142,7 @@ serde_json = { version = "1.0.132", default-features = false }
 
 # Ethereum
 unsigned-varint = "0.8.0"
-revm = { version = "16.0.0", default-features = false }
+revm = { version = "18.0.0", default-features = false }
 
 # K/V database
 rocksdb = { version = "0.22", default-features = false }

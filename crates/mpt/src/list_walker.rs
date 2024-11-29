@@ -3,7 +3,7 @@
 
 use crate::{
     errors::{OrderedListWalkerError, OrderedListWalkerResult},
-    TrieNode, TrieNodeError, TrieProvider,
+    TrieNode, TrieNodeData, TrieNodeError, TrieProvider,
 };
 use alloc::{collections::VecDeque, string::ToString, vec};
 use alloy_primitives::{Bytes, B256};
@@ -57,7 +57,7 @@ where
         // With small lists the iterator seems to use 0x80 (RLP empty string, unlike the others)
         // as key for item 0, causing it to come last. We need to account for this, pulling the
         // first element into its proper position.
-        let mut ordered_list = Self::fetch_leaves(&root_trie_node, fetcher)?;
+        let mut ordered_list = Self::fetch_leaves(root_trie_node.as_data(), fetcher)?;
         if !ordered_list.is_empty() {
             if ordered_list.len() <= EMPTY_STRING_CODE as usize {
                 // If the list length is < 0x80, the final element is the first element.
@@ -83,21 +83,22 @@ where
 
     /// Traverses a [TrieNode], returning all values of child [TrieNode::Leaf] variants.
     fn fetch_leaves(
-        trie_node: &TrieNode,
+        trie_node: &TrieNodeData,
         fetcher: &F,
     ) -> OrderedListWalkerResult<VecDeque<(Bytes, Bytes)>> {
         match trie_node {
-            TrieNode::Branch { stack } => {
+            TrieNodeData::Branch { stack } => {
                 let mut leaf_values = VecDeque::with_capacity(stack.len());
                 for item in stack.iter() {
-                    match item {
-                        TrieNode::Blinded { commitment } => {
+                    match item.as_data() {
+                        TrieNodeData::Blinded { commitment } => {
                             // If the string is a hash, we need to grab the preimage for it and
                             // continue recursing.
                             let trie_node = Self::get_trie_node(commitment.as_ref(), fetcher)?;
-                            leaf_values.append(&mut Self::fetch_leaves(&trie_node, fetcher)?);
+                            leaf_values
+                                .append(&mut Self::fetch_leaves(trie_node.as_data(), fetcher)?);
                         }
-                        TrieNode::Empty => { /* Skip over empty nodes, we're looking for values. */
+                        TrieNodeData::Empty => { /* Skip over empty nodes, we're looking for values. */
                         }
                         item => {
                             // If the item is already retrieved, recurse on it.
@@ -107,21 +108,21 @@ where
                 }
                 Ok(leaf_values)
             }
-            TrieNode::Leaf { prefix, value } => {
+            TrieNodeData::Leaf { prefix, value } => {
                 Ok(vec![(prefix.to_vec().into(), value.clone())].into())
             }
-            TrieNode::Extension { node, .. } => {
+            TrieNodeData::Extension { node, .. } => {
                 // If the node is a hash, we need to grab the preimage for it and continue
                 // recursing. If it is already retrieved, recurse on it.
-                match node.as_ref() {
-                    TrieNode::Blinded { commitment } => {
+                match node.as_data() {
+                    TrieNodeData::Blinded { commitment } => {
                         let trie_node = Self::get_trie_node(commitment.as_ref(), fetcher)?;
-                        Ok(Self::fetch_leaves(&trie_node, fetcher)?)
+                        Ok(Self::fetch_leaves(trie_node.as_data(), fetcher)?)
                     }
                     node => Ok(Self::fetch_leaves(node, fetcher)?),
                 }
             }
-            TrieNode::Empty => Ok(VecDeque::new()),
+            TrieNodeData::Empty => Ok(VecDeque::new()),
             _ => Err(TrieNodeError::InvalidNodeType.into()),
         }
     }
@@ -234,7 +235,7 @@ mod test {
 
     #[test]
     fn test_empty_list_walker() {
-        assert!(OrderedListWalker::fetch_leaves(&TrieNode::Empty, &NoopTrieProvider)
+        assert!(OrderedListWalker::fetch_leaves(&TrieNodeData::Empty, &NoopTrieProvider)
             .expect("Failed to traverse empty trie")
             .is_empty());
     }

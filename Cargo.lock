@@ -101,18 +101,6 @@ dependencies = [
 
 [[package]]
 name = "alloy-eip7702"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eeffd2590ce780ddfaa9d0ae340eb2b4e08627650c4676eef537cef0b4bf535d"
-dependencies = [
- "alloy-primitives",
- "alloy-rlp",
- "k256",
- "serde",
-]
-
-[[package]]
-name = "alloy-eip7702"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f6cee6a35793f3db8a5ffe60e86c695f321d081a567211245f503e8c498fce8"
@@ -131,7 +119,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b6aa3961694b30ba53d41006131a2fca3bdab22e4c344e46db2c639e7c2dfdd"
 dependencies = [
  "alloy-eip2930",
- "alloy-eip7702 0.4.1",
+ "alloy-eip7702",
  "alloy-primitives",
  "alloy-rlp",
  "alloy-serde",
@@ -3553,9 +3541,9 @@ dependencies = [
 
 [[package]]
 name = "revm"
-version = "16.0.0"
+version = "18.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34e44692d5736cc44c697a372e507890f8797f06d1541c5f4b9bec594d90fd8a"
+checksum = "15689a3c6a8d14b647b4666f2e236ef47b5a5133cdfd423f545947986fff7013"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -3568,9 +3556,9 @@ dependencies = [
 
 [[package]]
 name = "revm-interpreter"
-version = "12.0.0"
+version = "14.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f89940d17d5d077570de1977f52f69049595322e237cb6c754c3d47f668f023"
+checksum = "74e3f11d0fed049a4a10f79820c59113a79b38aed4ebec786a79d5c667bfeb51"
 dependencies = [
  "revm-primitives",
  "serde",
@@ -3578,9 +3566,9 @@ dependencies = [
 
 [[package]]
 name = "revm-precompile"
-version = "13.0.0"
+version = "15.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8f816aaea3245cbdbe7fdd84955df33597f9322c7912c3e3ba7bc855e03211f"
+checksum = "e381060af24b750069a2b2d2c54bba273d84e8f5f9e8026fc9262298e26cc336"
 dependencies = [
  "aurora-engine-modexp",
  "blst",
@@ -3598,12 +3586,12 @@ dependencies = [
 
 [[package]]
 name = "revm-primitives"
-version = "12.0.0"
+version = "14.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "532411bbde45a46707c1d434dcdc29866cf261c1b748fb01b303ce3b4310b361"
+checksum = "3702f132bb484f4f0d0ca4f6fbde3c82cfd745041abbedd6eda67730e1868ef0"
 dependencies = [
  "alloy-eip2930",
- "alloy-eip7702 0.2.0",
+ "alloy-eip7702",
  "alloy-primitives",
  "auto_impl",
  "bitflags 2.6.0",

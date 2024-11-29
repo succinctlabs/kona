@@ -16,7 +16,7 @@ mod traits;
 pub use traits::{TrieHinter, TrieProvider};
 
 mod node;
-pub use node::TrieNode;
+pub use node::{TrieNode, TrieNodeData};
 
 mod list_walker;
 pub use list_walker::OrderedListWalker;

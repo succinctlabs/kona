@@ -39,12 +39,13 @@ tracing-subscriber = { workspace = true, features = ["fmt"] }
 pprof = { workspace = true, features = ["criterion", "flamegraph", "frame-pointer"] }
 
 [features]
-default = ["serde"]
+default = ["serde", "caching"]
 serde = [
     "dep:serde",
     "alloy-primitives/serde",
     "alloy-trie/serde"
 ]
+caching = []
 
 [[bench]]
 name = "trie_node"

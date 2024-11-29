@@ -3,8 +3,8 @@
 use alloc::sync::Arc;
 use alloy_consensus::{Header, Sealed};
 use alloy_primitives::B256;
-use kona_driver::{Executor, ExecutorConstructor};
-use kona_executor::{KonaHandleRegister, StatelessL2BlockExecutor, TrieDBProvider};
+use kona_driver::{Executor, ExecutorConstructor, PipelineCursor};
+use kona_executor::{KonaHandleRegister, StatelessL2BlockExecutor, TrieDB, TrieDBProvider};
 use kona_mpt::TrieHinter;
 use op_alloy_genesis::RollupConfig;
 use op_alloy_rpc_types_engine::OpPayloadAttributes;
@@ -93,6 +93,67 @@ where
             )
             .with_parent_header(header)
             .with_handle_register(self.handle_register)
+            .build(),
+        )
+    }
+}
+
+#[derive(Debug)]
+pub struct CachedStateExecutorConstructor<'a, P, H>
+where
+    P: TrieDBProvider + Send + Sync + Clone,
+    H: TrieHinter + Send + Sync + Clone,
+{
+    inner: KonaExecutorConstructor<'a, P, H>,
+    trie_db: TrieDB<P, H>,
+}
+
+impl<'a, P, H> CachedStateExecutorConstructor<'a, P, H>
+where
+    P: TrieDBProvider + Send + Sync + Clone,
+    H: TrieHinter + Send + Sync + Clone,
+{
+    /// Creates a new executor constructor.
+    pub fn new(
+        rollup_config: &'a Arc<RollupConfig>,
+        trie_provider: P,
+        trie_hinter: H,
+        handle_register: KonaHandleRegister<P, H>,
+        cursor: &PipelineCursor,
+    ) -> Self {
+        let header = cursor.l2_safe_head_header().clone();
+
+        Self {
+            inner: KonaExecutorConstructor::new(
+                rollup_config,
+                trie_provider.clone(),
+                trie_hinter.clone(),
+                handle_register,
+            ),
+            trie_db: TrieDB::new(header.state_root, header, trie_provider, trie_hinter),
+        }
+    }
+}
+
+impl<'a, P, H> ExecutorConstructor<KonaExecutor<'a, P, H>>
+    for CachedStateExecutorConstructor<'a, P, H>
+where
+    P: TrieDBProvider + Send + Sync + Clone,
+    H: TrieHinter + Send + Sync + Clone,
+{
+    /// Constructs the executor.
+    fn new_executor(&self, header: Sealed<Header>) -> KonaExecutor<'a, P, H> {
+        let x = &mut self.trie_db;
+
+        KonaExecutor::new(
+            StatelessL2BlockExecutor::builder(
+                self.inner.rollup_config,
+                self.inner.trie_provider.clone(),
+                self.inner.trie_hinter.clone(),
+            )
+            .with_parent_header(header)
+            .with_trie_db(x)
+            .with_handle_register(self.inner.handle_register)
             .build(),
         )
     }

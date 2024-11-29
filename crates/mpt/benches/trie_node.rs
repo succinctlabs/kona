@@ -19,7 +19,7 @@ fn trie(c: &mut Criterion) {
             (0..2usize.pow(12)).map(|_| Nibbles::unpack(rng.gen::<[u8; 32]>())).collect::<Vec<_>>();
 
         b.iter(|| {
-            let mut trie = TrieNode::Empty;
+            let mut trie = TrieNode::default();
             for key in &keys {
                 trie.insert(key, key.to_vec().into(), &NoopTrieProvider).unwrap();
             }
@@ -31,7 +31,7 @@ fn trie(c: &mut Criterion) {
             (0..2usize.pow(16)).map(|_| Nibbles::unpack(rng.gen::<[u8; 32]>())).collect::<Vec<_>>();
 
         b.iter(|| {
-            let mut trie = TrieNode::Empty;
+            let mut trie = TrieNode::default();
             for key in &keys {
                 trie.insert(key, key.to_vec().into(), &NoopTrieProvider).unwrap();
             }
@@ -41,7 +41,7 @@ fn trie(c: &mut Criterion) {
     g.bench_function("Delete 16 nodes - 4096 nodes", |b| {
         let keys =
             (0..2usize.pow(12)).map(|_| Nibbles::unpack(rng.gen::<[u8; 32]>())).collect::<Vec<_>>();
-        let mut trie = TrieNode::Empty;
+        let mut trie = TrieNode::default();
 
         let rng = &mut rand::thread_rng();
         let keys_to_delete = keys.choose_multiple(rng, 16).cloned().collect::<Vec<_>>();
@@ -61,7 +61,7 @@ fn trie(c: &mut Criterion) {
     g.bench_function("Delete 16 nodes - 65,536 nodes", |b| {
         let keys =
             (0..2usize.pow(16)).map(|_| Nibbles::unpack(rng.gen::<[u8; 32]>())).collect::<Vec<_>>();
-        let mut trie = TrieNode::Empty;
+        let mut trie = TrieNode::default();
         for key in &keys {
             trie.insert(key, key.to_vec().into(), &NoopTrieProvider).unwrap();
         }
@@ -80,7 +80,7 @@ fn trie(c: &mut Criterion) {
     g.bench_function("Open 1024 nodes - 4096 nodes", |b| {
         let keys =
             (0..2usize.pow(12)).map(|_| Nibbles::unpack(rng.gen::<[u8; 32]>())).collect::<Vec<_>>();
-        let mut trie = TrieNode::Empty;
+        let mut trie = TrieNode::default();
         for key in &keys {
             trie.insert(key, key.to_vec().into(), &NoopTrieProvider).unwrap();
         }
@@ -98,7 +98,7 @@ fn trie(c: &mut Criterion) {
     g.bench_function("Open 1024 nodes - 65,536 nodes", |b| {
         let keys =
             (0..2usize.pow(16)).map(|_| Nibbles::unpack(rng.gen::<[u8; 32]>())).collect::<Vec<_>>();
-        let mut trie = TrieNode::Empty;
+        let mut trie = TrieNode::default();
         for key in &keys {
             trie.insert(key, key.to_vec().into(), &NoopTrieProvider).unwrap();
         }
@@ -116,7 +116,7 @@ fn trie(c: &mut Criterion) {
     g.bench_function("Compute root, fully open trie - 4096 nodes", |b| {
         let keys =
             (0..2usize.pow(12)).map(|_| Nibbles::unpack(rng.gen::<[u8; 32]>())).collect::<Vec<_>>();
-        let mut trie = TrieNode::Empty;
+        let mut trie = TrieNode::default();
         for key in &keys {
             trie.insert(key, key.to_vec().into(), &NoopTrieProvider).unwrap();
         }
@@ -130,7 +130,7 @@ fn trie(c: &mut Criterion) {
     g.bench_function("Compute root, fully open trie - 65,536 nodes", |b| {
         let keys =
             (0..2usize.pow(16)).map(|_| Nibbles::unpack(rng.gen::<[u8; 32]>())).collect::<Vec<_>>();
-        let mut trie = TrieNode::Empty;
+        let mut trie = TrieNode::default();
         for key in &keys {
             trie.insert(key, key.to_vec().into(), &NoopTrieProvider).unwrap();
         }
