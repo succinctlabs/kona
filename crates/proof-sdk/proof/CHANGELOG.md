@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/succinctlabs/kona/compare/kona-proof-v0.1.0...kona-proof-v0.2.0) - 2024-11-29
+
+### Added
+
+- *(driver)* wait for engine ([#851](https://github.com/succinctlabs/kona/pull/851))
+- *(client)* Invalidate impossibly old claims ([#852](https://github.com/succinctlabs/kona/pull/852))
+- *(driver)* refines the executor interface for the driver ([#850](https://github.com/succinctlabs/kona/pull/850))
+- *(workspace)* Isolate FPVM-specific platform code ([#821](https://github.com/succinctlabs/kona/pull/821))
+
+### Other
+
+- *(host)* Hint Parsing Cleanup ([#844](https://github.com/succinctlabs/kona/pull/844))
+- *(derive)* remove indexed blob hash ([#847](https://github.com/succinctlabs/kona/pull/847))
+- L2ExecutePayloadProof Hint Type ([#832](https://github.com/succinctlabs/kona/pull/832))
+
 ## [0.0.1](https://github.com/anton-rs/kona/releases/tag/kona-proof-v0.0.1) - 2024-11-20
 
 ### Added
