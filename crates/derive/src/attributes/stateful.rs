@@ -129,13 +129,13 @@ where
         }
 
         let mut upgrade_transactions: Vec<Bytes> = vec![];
-        if self.rollup_cfg.is_ecotone_active(next_l2_time) &&
-            !self.rollup_cfg.is_ecotone_active(l2_parent.block_info.timestamp)
+        if self.rollup_cfg.is_ecotone_active(next_l2_time)
+            && !self.rollup_cfg.is_ecotone_active(l2_parent.block_info.timestamp)
         {
             upgrade_transactions = Hardforks::ECOTONE.txs().collect();
         }
-        if self.rollup_cfg.is_fjord_active(next_l2_time) &&
-            !self.rollup_cfg.is_fjord_active(l2_parent.block_info.timestamp)
+        if self.rollup_cfg.is_fjord_active(next_l2_time)
+            && !self.rollup_cfg.is_fjord_active(l2_parent.block_info.timestamp)
         {
             upgrade_transactions.append(&mut Hardforks::FJORD.txs().collect());
         }
@@ -212,7 +212,7 @@ async fn derive_deposits(
         for l in r.logs.iter() {
             let curr_index = global_index;
             global_index += 1;
-            if l.data.topics().first().is_none_or(|i| *i != DEPOSIT_EVENT_ABI_HASH) {
+            if l.data.topics().first().map_or(true, |i| *i != DEPOSIT_EVENT_ABI_HASH) {
                 continue;
             }
             if l.address != deposit_contract {
