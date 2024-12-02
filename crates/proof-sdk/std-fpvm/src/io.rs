@@ -10,6 +10,9 @@ cfg_if! {
     } else if #[cfg(target_arch = "riscv64")] {
         #[doc = "Concrete implementation of the [BasicKernelInterface] trait for the `riscv64` target architecture."]
         pub(crate) type ClientIO = crate::riscv64::io::RiscV64IO;
+    } else if #[cfg(target_os = "zkvm")] {
+        #[doc = "Concrete implementation of the [BasicKernelInterface] trait for the `SP1` target architecture."]
+        pub(crate) type ClientIO = crate::zkvm::io::ZkvmIO;
     } else {
         use std::{fs::File, os::fd::FromRawFd, io::{Read, Write}};
         use crate::errors::IOError;

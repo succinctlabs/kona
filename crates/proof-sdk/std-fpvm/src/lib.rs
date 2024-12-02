@@ -34,3 +34,6 @@ pub(crate) mod mips32;
 
 #[cfg(target_arch = "riscv64")]
 pub(crate) mod riscv64;
+
+#[cfg(target_os = "zkvm")]
+pub(crate) mod zkvm;
