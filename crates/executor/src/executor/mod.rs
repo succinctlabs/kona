@@ -147,6 +147,7 @@ where
         };
 
         // Execute the transactions in the payload.
+        println!("cycle-tracker-report-start: block-execution");
         let decoded_txs = transactions
             .iter()
             .map(|raw_tx| {
@@ -159,8 +160,8 @@ where
             // The sum of the transaction’s gas limit, Tg, and the gas utilized in this block prior,
             // must be no greater than the block’s gasLimit.
             let block_available_gas = (gas_limit - cumulative_gas_used) as u128;
-            if (transaction.gas_limit() as u128) > block_available_gas &&
-                (is_regolith || !transaction.is_system_transaction())
+            if (transaction.gas_limit() as u128) > block_available_gas
+                && (is_regolith || !transaction.is_system_transaction())
             {
                 return Err(ExecutorError::BlockGasLimitExceeded);
             }
@@ -240,12 +241,15 @@ where
         // Merge all state transitions into the cache state.
         debug!(target: "client_executor", "Merging state transitions");
         state.merge_transitions(BundleRetention::Reverts);
+        println!("cycle-tracker-report-end: block-execution");
 
         // Take the bundle state.
         let bundle = state.take_bundle();
 
+        println!("cycle-tracker-report-start: state-root");
         // Recompute the header roots.
         let state_root = state.database.state_root(&bundle)?;
+        println!("cycle-tracker-report-end: state-root");
 
         let transactions_root = Self::compute_transactions_root(transactions.as_slice());
         let receipts_root = Self::compute_receipts_root(
