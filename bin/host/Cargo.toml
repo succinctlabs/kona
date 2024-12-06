@@ -37,7 +37,7 @@ op-alloy-genesis = { workspace = true, features = ["std", "serde"] }
 op-alloy-protocol = { workspace = true, features = ["std", "serde"] }
 
 # Revm
-revm = { workspace = true, features = ["std", "kzg-rs", "secp256k1", "portable", "blst"] }
+revm = { workspace = true, features = ["std", "kzg-rs", "portable", "blst"] }
 
 # General
 anyhow.workspace = true
