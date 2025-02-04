@@ -270,15 +270,11 @@ where
                 }
 
                 // Fetch the raw header from the L2 chain provider.
-                let hash: B256 = hint_data[0..32]
-                    .as_ref()
-                    .try_into()
-                    .map_err(|e| anyhow!("Failed to convert bytes to B256: {e}"))?;
+                let hash: B256 = B256::from_slice(&hint_data[0..32]);
 
                 let active_l2_chain_id = if hint_data.len() == 40 {
                     u64::from_be_bytes(
                         hint_data[32..40]
-                            .as_ref()
                             .try_into()
                             .map_err(|e| anyhow!("Failed to convert bytes to u64: {e}"))?,
                     )
@@ -351,13 +347,9 @@ where
 
                 // Fetch the receipts from the L1 chain provider and store the receipts within the
                 // key-value store.
-                let hash: B256 = hint_data[0..32]
-                    .as_ref()
-                    .try_into()
-                    .map_err(|e| anyhow!("Failed to convert bytes to B256: {e}"))?;
+                let hash: B256 = B256::from_slice(&hint_data[0..32]);
                 let chain_id = u64::from_be_bytes(
                     hint_data[32..40]
-                        .as_ref()
                         .try_into()
                         .map_err(|e| anyhow!("Failed to convert bytes to u64: {e}"))?,
                 );
