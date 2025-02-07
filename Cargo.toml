@@ -79,10 +79,11 @@ kona-preimage = { path = "crates/proof-sdk/preimage", version = "0.2.1", default
 kona-std-fpvm-proc = { path = "crates/proof-sdk/std-fpvm-proc", version = "0.1.2", default-features = false }
 
 # Maili
-maili-rpc = { version = "0.2.0", default-features = false }
-maili-protocol = { version = "0.2.0", default-features = false }
-maili-registry = { version = "0.2.0", default-features = false }
-maili-genesis = { version = "0.2.0", default-features = false }
+# rev is the latest commit on the taehoon/remove-pre-release-hook branch
+maili-rpc = { git = "https://github.com/succinctlabs/maili", rev = "140e3c7", default-features = false }
+maili-protocol = { git = "https://github.com/succinctlabs/maili", rev = "140e3c7", default-features = false }
+maili-registry = { git = "https://github.com/succinctlabs/maili", rev = "140e3c7", default-features = false }
+maili-genesis = { git = "https://github.com/succinctlabs/maili", rev = "140e3c7", default-features = false }
 
 # Alloy
 alloy-rlp = { version = "0.3.11", default-features = false }
