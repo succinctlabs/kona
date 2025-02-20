@@ -1,0 +1,20 @@
+[workspace.package]
+[package]
+name = "op-succinct"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+sp1-zkvm.version = "4.1.0"
+op-succinct-client-utils = { git = "https://github.com/succinctlabs/op-succinct", tag = "v1.2.2" }
+kona-proof = { path = "../../../../../crates/proof/proof" }
+
+
+[patch."https://github.com/op-rs/kona"]
+kona-preimage = { path = "../../../../../crates/proof/preimage" }
+kona-mpt = { path = "../../../../../crates/proof/mpt" }
+kona-derive = { path = "../../../../../crates/protocol/derive" }
+kona-proof = { path = "../../../../../crates/proof/proof" }
+kona-executor = { path = "../../../../../crates/proof/executor" }
+kona-driver = { path = "../../../../../crates/protocol/driver" }

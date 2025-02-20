@@ -30,3 +30,10 @@ impl KeyValueStore for MemoryKeyValueStore {
         Ok(())
     }
 }
+
+#[cfg(feature = "sp1")]
+impl From<MemoryKeyValueStore> for op_succinct_client_utils::InMemoryOracle {
+    fn from(value: MemoryKeyValueStore) -> Self {
+        Self { cache: value.store.into_iter().map(|(k, v)| (k.0, v)).collect() }
+    }
+}
