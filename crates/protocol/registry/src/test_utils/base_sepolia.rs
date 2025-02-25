@@ -20,7 +20,7 @@ pub const BASE_SEPOLIA_CONFIG: RollupConfig = RollupConfig {
         },
         l2_time: 1695768288,
         system_config: Some(SystemConfig {
-            batcher_address: address!("6cdebe940bc0f26850285caca097c11c33103e47"),
+            batcher_address: address!("fc56E7272EEBBBA5bC6c544e159483C4a38f8bA3"),
             overhead: uint!(0x834_U256),
             scalar: uint!(0xf4240_U256),
             gas_limit: 25000000,
