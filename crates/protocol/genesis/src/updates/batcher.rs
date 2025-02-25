@@ -10,13 +10,13 @@ use crate::{BatcherUpdateError, SystemConfig, SystemConfigLog};
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BatcherUpdate {
     /// The batcher address.
-    pub batcher_address: Address,
+    pub batch_submitter: Address,
 }
 
 impl BatcherUpdate {
     /// Applies the update to the [`SystemConfig`].
     pub fn apply(&self, config: &mut SystemConfig) {
-        config.batcher_address = self.batcher_address;
+        config.batch_submitter = self.batch_submitter;
     }
 }
 
@@ -42,11 +42,11 @@ impl TryFrom<&SystemConfigLog> for BatcherUpdate {
             return Err(BatcherUpdateError::InvalidDataLength(length));
         }
 
-        let Ok(batcher_address) = <sol!(address)>::abi_decode(&log.data.data[64..], true) else {
+        let Ok(batch_submitter) = <sol!(address)>::abi_decode(&log.data.data[64..], true) else {
             return Err(BatcherUpdateError::BatcherAddressDecodingError);
         };
 
-        Ok(Self { batcher_address })
+        Ok(Self { batch_submitter })
     }
 }
 

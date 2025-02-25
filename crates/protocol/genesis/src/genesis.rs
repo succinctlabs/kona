@@ -53,7 +53,7 @@ mod tests {
             },
             l2_time: 1686068903,
             system_config: Some(SystemConfig {
-                batcher_address: address!("6887246668a3b87F54DeB3b94Ba47a6f63F32985"),
+                batch_submitter: address!("6887246668a3b87F54DeB3b94Ba47a6f63F32985"),
                 overhead: uint!(0xbc_U256),
                 scalar: uint!(0xa6fe0_U256),
                 gas_limit: 30000000,
@@ -80,7 +80,7 @@ mod tests {
             },
             "l2_time": 1686068903,
             "system_config": {
-              "batcherAddress": "0x6887246668a3b87F54DeB3b94Ba47a6f63F32985",
+              "batchSubmitter": "0x6887246668a3b87F54DeB3b94Ba47a6f63F32985",
               "overhead": "0x00000000000000000000000000000000000000000000000000000000000000bc",
               "scalar": "0x00000000000000000000000000000000000000000000000000000000000a6fe0",
               "gasLimit": 30000000

@@ -16,8 +16,8 @@ use crate::{
 #[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct SystemConfig {
     /// Batcher address
-    #[cfg_attr(feature = "serde", serde(rename = "batcherAddress", alias = "batcherAddr"))]
-    pub batcher_address: Address,
+    #[cfg_attr(feature = "serde", serde(rename = "batchSubmitter", alias = "batchSubmitter"))]
+    pub batch_submitter: Address,
     /// Fee overhead value
     pub overhead: U256,
     /// Fee scalar value
@@ -56,8 +56,8 @@ impl<'a> serde::Deserialize<'a> for SystemConfig {
         #[serde(rename_all = "camelCase")]
         #[serde(deny_unknown_fields)]
         struct SystemConfigAlias {
-            #[serde(rename = "batcherAddress", alias = "batcherAddr")]
-            batcher_address: Address,
+            #[serde(rename = "batchSubmitter", alias = "batchSubmitterAddr")]
+            batch_submitter: Address,
             overhead: U256,
             scalar: U256,
             gas_limit: u64,
@@ -79,7 +79,7 @@ impl<'a> serde::Deserialize<'a> for SystemConfig {
         }
 
         Ok(Self {
-            batcher_address: alias.batcher_address,
+            batch_submitter: alias.batch_submitter,
             overhead: alias.overhead,
             scalar: alias.scalar,
             gas_limit: alias.gas_limit,
@@ -108,9 +108,9 @@ impl SystemConfig {
 
             receipt.logs.iter().try_for_each(|log| {
                 let topics = log.topics();
-                if log.address == l1_system_config_address &&
-                    !topics.is_empty() &&
-                    topics[0] == CONFIG_UPDATE_TOPIC
+                if log.address == l1_system_config_address
+                    && !topics.is_empty()
+                    && topics[0] == CONFIG_UPDATE_TOPIC
                 {
                     // Safety: Error is bubbled up by the trailing `?`
                     self.process_config_update_log(log, ecotone_active)?;
@@ -188,7 +188,7 @@ mod test {
     #[cfg(feature = "serde")]
     fn test_system_config_alias() {
         let sc_str: &'static str = r#"{
-          "batcherAddress": "0x6887246668a3b87F54DeB3b94Ba47a6f63F32985",
+          "batchSubmitter": "0x6887246668a3b87F54DeB3b94Ba47a6f63F32985",
           "overhead": "0x00000000000000000000000000000000000000000000000000000000000000bc",
           "scalar": "0x00000000000000000000000000000000000000000000000000000000000a6fe0",
           "gasLimit": 30000000
@@ -197,7 +197,7 @@ mod test {
         assert_eq!(
             system_config,
             SystemConfig {
-                batcher_address: address!("6887246668a3b87F54DeB3b94Ba47a6f63F32985"),
+                batch_submitter: address!("6887246668a3b87F54DeB3b94Ba47a6f63F32985"),
                 overhead: U256::from(0xbc),
                 scalar: U256::from(0xa6fe0),
                 gas_limit: 30000000,
