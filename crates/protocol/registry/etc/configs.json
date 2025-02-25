@@ -3645,7 +3645,7 @@
             },
             "l2_time": 1695768288,
             "system_config": {
-              "batcherAddress": "0x6cdebe940bc0f26850285caca097c11c33103e47",
+              "batcherAddress": "0xfc56E7272EEBBBA5bC6c544e159483C4a38f8bA3",
               "overhead": "0x834",
               "scalar": "0xf4240",
               "gasLimit": 25000000,
