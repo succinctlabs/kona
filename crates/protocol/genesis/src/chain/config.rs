@@ -124,10 +124,7 @@ impl ChainConfig {
 
     /// Returns the base fee config for the chain.
     pub fn base_fee_config(&self) -> BaseFeeConfig {
-        self.optimism
-            .as_ref()
-            .map(|op| op.clone())
-            .unwrap_or_else(|| base_fee_config(self.chain_id))
+        self.optimism.as_ref().map(|op| *op).unwrap_or_else(|| base_fee_config(self.chain_id))
     }
 
     /// Loads the rollup config for the OP-Stack chain given the chain config and address list.
@@ -178,7 +175,7 @@ impl ChainConfig {
             granite_channel_timeout: GRANITE_CHANNEL_TIMEOUT,
             interop_message_expiry_window: DEFAULT_INTEROP_MESSAGE_EXPIRY_WINDOW,
             chain_op_config: self.base_fee_config(),
-            alt_da_config: self.alt_da.as_ref().map(|alt_da| alt_da.clone()),
+            alt_da_config: self.alt_da.clone(),
         }
     }
 }
