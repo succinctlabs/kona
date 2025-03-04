@@ -536,7 +536,7 @@ mod tests {
             "eip1559Denominator": "0x32",
             "eip1559DenominatorCanyon": "0xfa"
             },
-          "alt_da": null,
+          "alt_da": null
         }
         "#;
 
