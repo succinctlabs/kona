@@ -125,6 +125,7 @@ impl<'a> arbitrary::Arbitrary<'a> for RollupConfig {
             da_challenge_address: Option::<Address>::arbitrary(u)?,
             interop_message_expiry_window: u.arbitrary()?,
             chain_op_config,
+            alt_da_config: Option::<AltDAConfig>::arbitrary(u)?,
         })
     }
 }
