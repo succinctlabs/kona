@@ -187,50 +187,50 @@ impl RollupConfig {
 impl RollupConfig {
     /// Returns true if Regolith is active at the given timestamp.
     pub fn is_regolith_active(&self, timestamp: u64) -> bool {
-        self.hardforks.regolith_time.is_some_and(|t| timestamp >= t)
-            || self.is_canyon_active(timestamp)
+        self.hardforks.regolith_time.is_some_and(|t| timestamp >= t) ||
+            self.is_canyon_active(timestamp)
     }
 
     /// Returns true if Canyon is active at the given timestamp.
     pub fn is_canyon_active(&self, timestamp: u64) -> bool {
-        self.hardforks.canyon_time.is_some_and(|t| timestamp >= t)
-            || self.is_delta_active(timestamp)
+        self.hardforks.canyon_time.is_some_and(|t| timestamp >= t) ||
+            self.is_delta_active(timestamp)
     }
 
     /// Returns true if Delta is active at the given timestamp.
     pub fn is_delta_active(&self, timestamp: u64) -> bool {
-        self.hardforks.delta_time.is_some_and(|t| timestamp >= t)
-            || self.is_ecotone_active(timestamp)
+        self.hardforks.delta_time.is_some_and(|t| timestamp >= t) ||
+            self.is_ecotone_active(timestamp)
     }
 
     /// Returns true if Ecotone is active at the given timestamp.
     pub fn is_ecotone_active(&self, timestamp: u64) -> bool {
-        self.hardforks.ecotone_time.is_some_and(|t| timestamp >= t)
-            || self.is_fjord_active(timestamp)
+        self.hardforks.ecotone_time.is_some_and(|t| timestamp >= t) ||
+            self.is_fjord_active(timestamp)
     }
 
     /// Returns true if Fjord is active at the given timestamp.
     pub fn is_fjord_active(&self, timestamp: u64) -> bool {
-        self.hardforks.fjord_time.is_some_and(|t| timestamp >= t)
-            || self.is_granite_active(timestamp)
+        self.hardforks.fjord_time.is_some_and(|t| timestamp >= t) ||
+            self.is_granite_active(timestamp)
     }
 
     /// Returns true if Granite is active at the given timestamp.
     pub fn is_granite_active(&self, timestamp: u64) -> bool {
-        self.hardforks.granite_time.is_some_and(|t| timestamp >= t)
-            || self.is_holocene_active(timestamp)
+        self.hardforks.granite_time.is_some_and(|t| timestamp >= t) ||
+            self.is_holocene_active(timestamp)
     }
 
     /// Returns true if Holocene is active at the given timestamp.
     pub fn is_holocene_active(&self, timestamp: u64) -> bool {
-        self.hardforks.holocene_time.is_some_and(|t| timestamp >= t)
-            || self.is_isthmus_active(timestamp)
+        self.hardforks.holocene_time.is_some_and(|t| timestamp >= t) ||
+            self.is_isthmus_active(timestamp)
     }
 
     /// Returns true if Isthmus is active at the given timestamp.
     pub fn is_isthmus_active(&self, timestamp: u64) -> bool {
-        self.hardforks.isthmus_time.is_some_and(|t| timestamp >= t)
-            || self.is_interop_active(timestamp)
+        self.hardforks.isthmus_time.is_some_and(|t| timestamp >= t) ||
+            self.is_interop_active(timestamp)
     }
 
     /// Returns true if Interop is active at the given timestamp.
