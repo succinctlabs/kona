@@ -25,7 +25,7 @@ impl ControllerBuilder {
     }
 
     /// Sets the [RollupConfig] for the [EngineController].
-    pub const fn with_config(mut self, config: RollupConfig) -> Self {
+    pub fn with_config(mut self, config: RollupConfig) -> Self {
         self.config = Some(config);
         self
     }
