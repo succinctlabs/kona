@@ -537,7 +537,7 @@ mod test {
     #[case::small_block(10311000)] // Unichain Mainnet
     #[case::small_block_2(10211000)] // Unichain Mainnet
     #[case::small_block_3(10215000)] // Unichain Mainnet
-    #[case::medium_block(132795025)] // OP Mainnet
+    #[case::medium_block_1(132795025)] // OP Mainnet
     #[tokio::test]
     async fn test_statelessly_execute_block(#[case] block_number: u64) {
         let fixture_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
