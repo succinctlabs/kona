@@ -57,6 +57,7 @@ where
     }
 
     fn extract_blob_data(&self, txs: Vec<TxEnvelope>) -> (Vec<BlobData>, Vec<IndexedBlobHash>) {
+        tracing::info!("Extracting blob data from batcher address: {:?}", self.batcher_address);
         let mut index: u64 = 0;
         let mut data = Vec::new();
         let mut hashes = Vec::new();
