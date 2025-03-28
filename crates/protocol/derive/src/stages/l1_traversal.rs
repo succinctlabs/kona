@@ -56,7 +56,7 @@ impl<F: ChainProvider> L1Traversal<F> {
             block: Some(BlockInfo::default()),
             data_source,
             done: false,
-            system_config: SystemConfig::default(),
+            system_config: cfg.genesis.system_config.unwrap_or_default(),
             rollup_config: cfg,
         }
     }
@@ -124,8 +124,8 @@ impl<F: ChainProvider> OriginProvider for L1Traversal<F> {
 impl<F: ChainProvider + Send> SignalReceiver for L1Traversal<F> {
     async fn signal(&mut self, signal: Signal) -> PipelineResult<()> {
         match signal {
-            Signal::Reset(ResetSignal { l1_origin, system_config, .. }) |
-            Signal::Activation(ActivationSignal { l1_origin, system_config, .. }) => {
+            Signal::Reset(ResetSignal { l1_origin, system_config, .. })
+            | Signal::Activation(ActivationSignal { l1_origin, system_config, .. }) => {
                 self.block = Some(l1_origin);
                 self.done = false;
                 self.system_config = system_config.expect("System config must be provided.");
