@@ -1,0 +1,7 @@
+Fetching configuration for block #2434489...
+Running host program with native client program...
+    Finished `release` profile [optimized] target(s) in 0.31s
+     Running `target/release/kona-host single --l1-head 0xdd0546ce8a22379393e9049932316056d4331deacf6849d554602db9c5c3b086 --agreed-l2-head-hash 0x38fb154677237edda3e830ea83d2316e0c264f6b1af544d4aae41af16d87a99d --claimed-l2-output-root 0x830a27941e4409736793db708dbf7bccd642fa66f32ad131544405d524b36f63 --agreed-l2-output-root 0x38c77a18a13f4c4c32c4cbbdce9189d411ec77f7320ea4d7133157d30ee89417 --claimed-l2-block-number 2434489 --l1-node-address 'https://eth-sepolia.g.alchemy.com/v2/hIxcf_hqT9It2hS8iCFeHKklL8tNyXNF' --l1-beacon-address 'https://restless-dimensional-lake.ethereum-sepolia.quiknode.pro/dbf58bd128200c47196a7dbeb84a42905f219959' --l2-node-address 'https://rpc-wolf-mammoth-plepjtp7jw.t.conduit.xyz/' --native --data-dir ./data --l2-chain-id 91578`
+[2m2025-03-30T13:25:45.569438Z[0m [32m INFO[0m [2mhost-server[0m[2m:[0m Starting oracle server
+[2m2025-03-30T13:25:45.569437Z[0m [32m INFO[0m [2mhost-server[0m[2m:[0m Starting hint router
+[2m2025-03-30T13:25:45.570135Z[0m [33m WARN[0m [2mboot-loader[0m[2m:[0m No rollup config found for chain ID 91578, falling back to preimage oracle. This is insecure in production without additional validation!

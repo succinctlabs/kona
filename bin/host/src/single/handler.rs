@@ -87,11 +87,17 @@ impl HintHandler for SingleChainHintHandler {
                 let indexed_hash = IndexedBlobHash { index, hash };
 
                 // Fetch the blob sidecar from the blob provider.
-                let mut sidecars = providers
-                    .blobs
-                    .fetch_filtered_sidecars(&partial_block_ref, &[indexed_hash])
-                    .await
-                    .map_err(|e| anyhow!("Failed to fetch blob sidecars: {e}"))?;
+                let mut sidecars = if let Some(blobs) = &providers.blobs {
+                    blobs
+                        .fetch_filtered_sidecars(&partial_block_ref, &[indexed_hash])
+                        .await
+                        .map_err(|e| anyhow!("Failed to fetch blob sidecars: {e}"))?
+                } else {
+                    return Err(
+                        anyhow!("Beacon API URL not provided, cannot fetch blob sidecars").into()
+                    );
+                };
+
                 if sidecars.len() != 1 {
                     anyhow::bail!("Expected 1 sidecar, got {}", sidecars.len());
                 }
