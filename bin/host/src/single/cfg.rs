@@ -46,31 +46,13 @@ pub struct SingleChainHost {
     #[arg(long, visible_alias = "l2-block-number", env)]
     pub claimed_l2_block_number: u64,
     /// Address of L2 JSON-RPC endpoint to use (eth and debug namespace required).
-    #[arg(
-        long,
-        visible_alias = "l2",
-        requires = "l1_node_address",
-        requires = "l1_beacon_address",
-        env
-    )]
+    #[arg(long, visible_alias = "l2", requires = "l1_node_address", env)]
     pub l2_node_address: Option<String>,
     /// Address of L1 JSON-RPC endpoint to use (eth and debug namespace required)
-    #[arg(
-        long,
-        visible_alias = "l1",
-        requires = "l2_node_address",
-        requires = "l1_beacon_address",
-        env
-    )]
+    #[arg(long, visible_alias = "l1", requires = "l2_node_address", env)]
     pub l1_node_address: Option<String>,
     /// Address of the L1 Beacon API endpoint to use.
-    #[arg(
-        long,
-        visible_alias = "beacon",
-        requires = "l1_node_address",
-        requires = "l2_node_address",
-        env
-    )]
+    #[arg(long, visible_alias = "beacon", requires = "l1_node_address", env)]
     pub l1_beacon_address: Option<String>,
     /// The Data Directory for preimage data storage. Optional if running in online mode,
     /// required if running in offline mode.
@@ -211,10 +193,10 @@ impl SingleChainHost {
 
     /// Returns `true` if the host is running in offline mode.
     pub const fn is_offline(&self) -> bool {
-        self.l1_node_address.is_none() &&
-            self.l2_node_address.is_none() &&
-            self.l1_beacon_address.is_none() &&
-            self.data_dir.is_some()
+        self.l1_node_address.is_none()
+            && self.l2_node_address.is_none()
+            && self.l1_beacon_address.is_none()
+            && self.data_dir.is_some()
     }
 
     /// Reads the [RollupConfig] from the file system and returns it as a string.
@@ -256,12 +238,16 @@ impl SingleChainHost {
                 .as_ref()
                 .ok_or(SingleChainHostError::Other("Provider must be set"))?,
         );
-        let blob_provider = OnlineBlobProvider::init(OnlineBeaconClient::new_http(
-            self.l1_beacon_address
-                .clone()
-                .ok_or(SingleChainHostError::Other("Beacon API URL must be set"))?,
-        ))
-        .await;
+
+        let blob_provider = if let Some(beacon_address) = &self.l1_beacon_address {
+            Some(
+                OnlineBlobProvider::init(OnlineBeaconClient::new_http(beacon_address.clone()))
+                    .await,
+            )
+        } else {
+            None
+        };
+
         let l2_provider = http_provider::<Optimism>(
             self.l2_node_address
                 .as_ref()
@@ -283,7 +269,7 @@ pub struct SingleChainProviders {
     /// The L1 EL provider.
     pub l1: RootProvider,
     /// The L1 beacon node provider.
-    pub blobs: OnlineBlobProvider<OnlineBeaconClient>,
+    pub blobs: Option<OnlineBlobProvider<OnlineBeaconClient>>,
     /// The L2 EL provider.
     pub l2: RootProvider<Optimism>,
 }
