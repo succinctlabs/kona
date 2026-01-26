@@ -275,3 +275,31 @@ ark-bls12-381 = { version = "0.5.0", default-features = false }
 # Rollup Boost (required for rollup-boost integration)
 rollup-boost = { git = "https://github.com/flashbots/rollup-boost.git", rev = "7fda98f" }
 parking_lot = "0.12.5"
+
+# Patch reth crates to fix PartialEq bug in reth-transaction-pool (PR #21336)
+# rollup-boost uses reth v1.9.3 which has this bug
+# v1.9.3-kona branch contains the backported fix
+[patch."https://github.com/paradigmxyz/reth"]
+reth-chainspec = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-chain-state = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-consensus = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-errors = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-ethereum-forks = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-ethereum-primitives = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-execution-errors = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-execution-types = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-optimism-chainspec = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-optimism-consensus = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-optimism-evm = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-optimism-forks = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-optimism-payload-builder = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-optimism-primitives = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-optimism-txpool = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-primitives = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-primitives-traits = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-revm = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-storage-api = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-storage-errors = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-transaction-pool = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-trie = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
+reth-trie-common = { git = "https://github.com/succinctlabs/reth", branch = "v1.9.3-kona" }
