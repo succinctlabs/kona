@@ -2,21 +2,20 @@
 
 use alloc::{vec, vec::Vec};
 use alloc_no_stdlib::*;
-use brotli::*;
+use brotli::{BrotliResult, *};
 use core::ops;
 
-use crate::MAX_SPAN_BATCH_ELEMENTS;
-
-/// A frame decompression error.
-#[derive(thiserror::Error, Debug, PartialEq, Eq)]
+/// A brotli decompression error.
+#[derive(thiserror::Error, Debug)]
 pub enum BrotliDecompressionError {
-    /// The buffer exceeds the [`MAX_SPAN_BATCH_ELEMENTS`] protocol parameter.
-    #[error("The batch exceeds the maximum number of elements: {max_size}", max_size = MAX_SPAN_BATCH_ELEMENTS)]
-    BatchTooLarge,
+    /// Brotli decompression failed due to corrupt or invalid data.
+    #[error("brotli decompression failed: {0:?}")]
+    DecompressionFailed(BrotliResult),
 }
 
 /// Decompresses the given bytes data using the Brotli decompressor implemented
 /// in the [`brotli`](https://crates.io/crates/brotli) crate.
+#[allow(clippy::large_stack_frames)]
 pub fn decompress_brotli(
     data: &[u8],
     max_rlp_bytes_per_channel: usize,
@@ -31,17 +30,21 @@ pub fn decompress_brotli(
     let hc_allocator = MemPool::<HuffmanCode>::new_allocator(&mut hc_buffer, bzero);
     let mut brotli_state = BrotliState::new(u8_allocator, u32_allocator, hc_allocator);
 
-    // Setup the decompressor inputs and outputs
-    let mut output = vec![0; data.len()];
+    // Setup the decompressor inputs and outputs.
+    // Cap initial buffer at the limit to prevent over-allocation.
+    let mut output = vec![0; core::cmp::min(data.len(), max_rlp_bytes_per_channel)];
     let mut available_in = data.len();
     let mut input_offset = 0;
     let mut available_out = output.len();
     let mut output_offset = 0;
     let mut written = 0;
 
-    // Decompress the data stream until success or failure
+    // Decompress the data stream until success or failure.
+    // The output buffer is grown as needed, capped at max_rlp_bytes_per_channel.
+    // Per spec, if decompressed data exceeds the limit, the output is truncated
+    // to max_rlp_bytes_per_channel bytes (not rejected).
     loop {
-        match brotli::BrotliDecompressStream(
+        let result = brotli::BrotliDecompressStream(
             &mut available_in,
             &mut input_offset,
             data,
@@ -50,28 +53,30 @@ pub fn decompress_brotli(
             &mut output,
             &mut written,
             &mut brotli_state,
-        ) {
-            brotli::BrotliResult::ResultSuccess => break,
-            brotli::BrotliResult::NeedsMoreOutput => {
-                // Resize the output buffer to double the size, following standard
-                // practice for buffer resizing in streams.
-                let old_len = output.len();
-                let new_len = old_len * 2;
+        );
+        let old_len = output.len();
 
-                if new_len > max_rlp_bytes_per_channel {
-                    return Err(BrotliDecompressionError::BatchTooLarge);
-                }
-
+        match result {
+            // Buffer was already grown to the limit on a previous iteration, but the decompressor
+            // filled it and still has more to produce: stop per spec.
+            BrotliResult::NeedsMoreOutput if old_len >= max_rlp_bytes_per_channel => break,
+            // Enlarge output buffer to continue decompression.
+            BrotliResult::NeedsMoreOutput => {
+                let new_len = core::cmp::min((old_len * 2).max(1), max_rlp_bytes_per_channel);
                 output.resize(new_len, 0);
-                available_out += old_len;
+                available_out += new_len - old_len;
             }
+            // No output: error.
+            _ if written == 0 => {
+                return Err(BrotliDecompressionError::DecompressionFailed(result));
+            }
+            // Success, NeedsMoreInput or ResultFailure with some output written: return partial
+            // data.
             _ => break,
         }
     }
 
-    // Truncate the output buffer to the written bytes
     output.truncate(written);
-
     Ok(output)
 }
 
